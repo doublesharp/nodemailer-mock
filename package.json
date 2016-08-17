@@ -1,0 +1,36 @@
+{
+  "name": "nodemailer-mock",
+  "version": "0.0.1",
+  "description": "Mock nodemailer module for testing",
+  "main": "index.js",
+  "directories": {
+    "lib": "./lib",
+    "test": "./test"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha",
+    "lint": "./node_modules/jshint/bin/jshint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doublesharp/nodemailer-mock.git"
+  },
+  "keywords": [
+    "nodemailer",
+    "mock",
+    "test",
+    "mocha"
+  ],
+  "author": "Justin Silver",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/doublesharp/nodemailer-mock/issues"
+  },
+  "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
+  "devDependencies": {
+    "debug": "^2.2.0",
+    "jshint": "^2.9.2",
+    "mocha": "^3.0.2",
+    "should": "^11.1.0"
+  }
+}
