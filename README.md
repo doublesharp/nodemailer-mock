@@ -16,6 +16,7 @@ There are some special methods available on the mocked module to help with testi
 * `nodemailerMock.mock.shouldFail(true|false)`: indicate if errors should be returned for subsequent calls to `transport.sendMail()`
  * if `true`, return error
  * if `false`, return success
+* `nodemailerMock.mock.successResponse(success)`: set the success message that is returned in the callback for `transport.sendMail()`
 * `nodemailerMock.mock.failResponse(err)`: set the err that is returned in the callback for `transport.sendMail()`
 
 # usage
@@ -105,13 +106,15 @@ describe('Tests that send email', function(){
   it('should fail to send an email using nodemailer-mock', function(done){
 
     // tell the mock class to return an error
+    const err = 'My custom error'
     nodemailerMock.mock.shouldFailOnce()
+    nodemailerMock.mock.failResponse(err)
   
     // call a service that uses nodemailer
     var response = ... // <-- your code here
     
     // a fake test for something on our response
-    response.error.should.be.exactly('email sending error')
+    response.error.should.be.exactly(err)
     
     done()
     
