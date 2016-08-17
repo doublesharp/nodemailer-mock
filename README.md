@@ -10,14 +10,20 @@ npm install nodemailer-mock --save-dev
 # mock api
 There are some special methods available on the mocked module to help with testing.
 
-* `nodemailerMock.mock.reset()`: resets the mock class to default values
-* `nodemailerMock.mock.sentMail()`: returns an array of sent emails
-* `nodemailerMock.mock.shouldFailOnce()`: will return an error on the next call to `transport.sendMail()`
-* `nodemailerMock.mock.shouldFail(true|false)`: indicate if errors should be returned for subsequent calls to `transport.sendMail()`
- * if `true`, return error
- * if `false`, return success
-* `nodemailerMock.mock.successResponse(success)`: set the success message that is returned in the callback for `transport.sendMail()`
-* `nodemailerMock.mock.failResponse(err)`: set the err that is returned in the callback for `transport.sendMail()`
+* `nodemailerMock.mock.reset()`
+  * resets the mock class to default values
+* `nodemailerMock.mock.sentMail()`
+  * returns an array of sent emails
+* `nodemailerMock.mock.shouldFailOnce()`
+  * will return an error on the next call to `transport.sendMail()`
+* `nodemailerMock.mock.shouldFail(true|false)`
+  * indicate if errors should be returned for subsequent calls to `transport.sendMail()`
+    * if `true`, return error
+    * if `false`, return success
+* `nodemailerMock.mock.successResponse(success)`
+  * set the success message that is returned in the callback for `transport.sendMail()`
+* `nodemailerMock.mock.failResponse(err)`
+  * set the err that is returned in the callback for `transport.sendMail()`
 
 # usage
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
