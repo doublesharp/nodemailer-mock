@@ -89,6 +89,21 @@ describe('Testing nodemailer-mock...', function(){
     })
   })
 
+  it('should have a custom success message', function(done){
+    // This is the success message we want it to return
+    const customSuccess = 'This is a custom success'
+    nodemailer.mock.successResponse(customSuccess)
+
+    // Send an email that should succeed
+    transport.sendMail('Email', function(err, info){
+      should(err).be.exactly(null)
+      info.response.should.be.exactly(customSuccess)
+
+      done()
+    })
+
+  })
+
   it('should have a custom error message', function(done){
     // This is the error message we want it to return
     const customError = 'This is a custom error'
