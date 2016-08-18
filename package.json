@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Mock nodemailer module for testing",
   "main": "index.js",
   "directories": {
