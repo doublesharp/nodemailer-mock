@@ -3,9 +3,19 @@
 const should = require('should')
 const messages = require('../lib/messages')
 const nodemailer = require('../')
-const transport = nodemailer.createTransport({})
+const transport = nodemailer.createTransport({
+  host: '127.0.0.1',
+  port: -100
+})
 
 describe('Testing nodemailer-mock...', function(){
+
+  let email = {
+    to: 'to@host.com',
+    from: 'from@example.com',
+    subject: 'subject',
+    html: 'html'
+  }
 
   beforeEach(function(){
 
@@ -19,8 +29,8 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should succeed
     transport.sendMail('Email', function(err, info){
 
-      should(err).be.exactly(null)
-      info.response.should.be.exactly(messages.success_response)
+      should(err).equal(null)
+      info.response.should.equal(messages.success_response)
 
       done()
 
@@ -36,14 +46,14 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should succeed
     transport.sendMail(email, function(err, info){
 
-      should(err).be.exactly(null)
-      info.response.should.be.exactly(messages.success_response)
+      should(err).equal(null)
+      info.response.should.equal(messages.success_response)
 
       // Check that our email was put into the sentMail cache
       const sentMail = nodemailer.mock.sentMail()
       should(sentMail).not.be.empty()
-      sentMail.length.should.be.exactly(1)
-      sentMail[0].should.be.exactly(email)
+      sentMail.length.should.equal(1)
+      sentMail[0].should.equal(email)
 
       done()
 
@@ -59,14 +69,14 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should fail
     transport.sendMail('Email', function(err, info){
 
-      should(err).be.exactly(messages.fail_response)
-      info.response.should.be.exactly(messages.fail_response)
+      should(err).equal(messages.fail_response)
+      info.response.should.equal(messages.fail_response)
 
       // Send an email that should succeed
       transport.sendMail('Email', function(err, info){
 
-        should(err).be.exactly(null)
-        info.response.should.be.exactly(messages.success_response)
+        should(err).equal(null)
+        info.response.should.equal(messages.success_response)
 
         done()
 
@@ -84,14 +94,14 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should fail
     transport.sendMail('Email 1', function(err, info){
 
-      should(err).be.exactly(messages.fail_response)
-      info.response.should.be.exactly(messages.fail_response)
+      should(err).equal(messages.fail_response)
+      info.response.should.equal(messages.fail_response)
 
       // Send another email that should fail
       transport.sendMail('Email 2', function(err, info){
 
-        should(err).be.exactly(messages.fail_response)
-        info.response.should.be.exactly(messages.fail_response)
+        should(err).equal(messages.fail_response)
+        info.response.should.equal(messages.fail_response)
 
         // tell the mock to succeed when sending
         nodemailer.mock.shouldFail(false)
@@ -99,8 +109,8 @@ describe('Testing nodemailer-mock...', function(){
         // Send an email that should succeed
         transport.sendMail('Email 3', function(err, info){
 
-          should(err).be.exactly(null)
-          info.response.should.be.exactly(messages.success_response)
+          should(err).equal(null)
+          info.response.should.equal(messages.success_response)
 
           done()
 
@@ -121,8 +131,8 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should succeed
     transport.sendMail('Email', function(err, info){
     
-      should(err).be.exactly(null)
-      info.response.should.be.exactly(customSuccess)
+      should(err).equal(null)
+      info.response.should.equal(customSuccess)
 
       done()
     
@@ -142,11 +152,54 @@ describe('Testing nodemailer-mock...', function(){
     // Send an email that should fail
     transport.sendMail('Email', function(err, info){
 
-      should(err).be.exactly(customError)
-      info.response.should.be.exactly(customError)
+      should(err).equal(customError)
+      info.response.should.equal(customError)
 
       done()
 
+    })
+
+  })
+
+  it('should return verify success using the mocked nodemailer transport', function(done){
+
+    transport.verify(function(err, success){
+
+      should(err).equal(null)
+
+      success.should.equal(messages.success_response)
+
+      done()
+    })
+
+  })
+
+  it('should return verify failure using the mocked nodemailer transport', function(done){
+
+    nodemailer.mock.shouldFailOnce()
+
+    transport.verify(function(err, success){
+
+      should(err).not.equal(null)
+      err.should.be.exactly(messages.fail_response)
+
+      done()
+      
+    })
+
+  })
+
+  it('should return verify error using the real nodemailer transport', function(done){
+
+    nodemailer.mock.mockedVerify(false)
+
+    transport.verify(function(err, success){
+
+      should(err).not.equal(null)
+      err.code.should.equal('ECONNECTION')
+      err.command.should.equal('CONN')
+
+      done()
     })
 
   })

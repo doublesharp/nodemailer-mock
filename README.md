@@ -3,7 +3,9 @@
 [![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
 [![Build Status](https://img.shields.io/jenkins/s/https/jenkins.doublesharp.com/nodemailer-mock.svg)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
 [![Code Coverage](https://jenkins.doublesharp.com/userContent/badges/coverage/nodemailer-mock.svg)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
-![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
+![Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock.svg)
+![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)
+![Downloads](https://www.npmjs.com/package/nodemailer-mock)
 
 Mocked nodemailer module for unit testing.
 
@@ -26,6 +28,10 @@ There are some special methods available on the mocked module to help with testi
   * indicate if errors should be returned for subsequent calls to `transport.sendMail()`
     * if `true`, return error
     * if `false`, return success
+* `nodemailerMock.mock.mockedVerify(true|false)`
+  * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
+    * if `true`, use a mocked callback
+    * if `false`, pass through to a real `nodemailer` transport
 * `nodemailerMock.mock.successResponse(success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
 * `nodemailerMock.mock.failResponse(err)`
@@ -40,6 +46,7 @@ The mocked module behaves in a similar fashion to other transports provided by `
 const nodemailerMock = require('nodemailer-mock')
 const transport = nodemailerMock.createTransport()
 
+// send an email
 const email = //... the email you want to send
 transport.sendMail(email, function(err, info){
   if (err){
@@ -48,6 +55,15 @@ transport.sendMail(email, function(err, info){
     console.log('Success!', info)
   }
 }
+
+// verify a transport
+transport.verify(function(err, success){
+  if (err){
+    console.log('Error!', err)
+  } else {
+    console.log('Success!', success)
+  }
+})
 ```
 
 # example using mocha and mockery
@@ -127,6 +143,23 @@ describe('Tests that send email', function(){
     
     // a fake test for something on our response
     response.error.should.be.exactly(err)
+    
+    done()
+    
+  })
+  
+  it('should verify using the real nodemailer transport', function(done){
+
+    // tell the mock class to return an error
+    const err = 'My custom error'
+    nodemailerMock.mock.mockedVerify(false)
+  
+    // call a service that uses nodemailer
+    var response = ... // <-- your code here
+    
+   
+    /* calls to transport.verify() will be passed through, 
+       transport.sendMail() is still mocked */
     
     done()
     
