@@ -150,14 +150,12 @@ describe('Tests that send email', function(){
   
   it('should verify using the real nodemailer transport', function(done){
 
-    // tell the mock class to return an error
-    const err = 'My custom error'
+    // tell the mock class to pass verify requests to nodemailer
     nodemailerMock.mock.mockedVerify(false)
   
     // call a service that uses nodemailer
     var response = ... // <-- your code here
     
-   
     /* calls to transport.verify() will be passed through, 
        transport.sendMail() is still mocked */
     
