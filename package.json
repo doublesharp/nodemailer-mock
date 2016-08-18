@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Mock nodemailer module for testing",
   "main": "index.js",
   "directories": {
@@ -9,6 +9,10 @@
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha",
+    "coverage": "npm run coverage-generate && open coverage/lcov-report/index.html",
+    "coverage-generate": "./node_modules/istanbul/lib/cli.js cover _mocha test/ -- -R spec",
+    "coverage-cobertura": "npm run coverage-generate && ./node_modules/istanbul/lib/cli.js report cobertura",
+    "coverage-badge": "npm run coverage-cobertura && ./node_modules/istanbul-cobertura-badger/lib/cli.js -e 95 -g 85 -b \"${PWD##*/}\"",
     "lint": "./node_modules/jshint/bin/jshint ."
   },
   "repository": {
@@ -28,6 +32,8 @@
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
+    "istanbul": "^0.4.4",
+    "istanbul-cobertura-badger": "^1.2.1",
     "jshint": "^2.9.2",
     "mocha": "^3.0.2",
     "should": "^11.1.0"

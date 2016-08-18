@@ -2,6 +2,7 @@
 
 [![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
 [![Build Status](https://jenkins.doublesharp.com/buildStatus/icon?job=nodemailer-mock)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
+[![Code Coverage](https://jenkins.doublesharp.com/userContent/badges/coverage/nodemailer-mock.svg)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
 
 Mocked nodemailer module for unit testing.
 
