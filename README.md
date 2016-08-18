@@ -3,6 +3,8 @@
 [![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
 [![Build Status](https://img.shields.io/jenkins/s/https/jenkins.doublesharp.com/nodemailer-mock.svg)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
 [![Code Coverage](https://jenkins.doublesharp.com/userContent/badges/coverage/nodemailer-mock.svg)](https://jenkins.doublesharp.com/job/nodemailer-mock/)
+[![Code Climate](https://codeclimate.com/github/doublesharp/nodemailer-mock/badges/gpa.svg)](https://codeclimate.com/github/doublesharp/nodemailer-mock)
+[![Issue Count](https://codeclimate.com/github/doublesharp/nodemailer-mock/badges/issue_count.svg)](https://codeclimate.com/github/doublesharp/nodemailer-mock)
 ![Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock.svg)
 ![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
