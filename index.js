@@ -1,3 +1,1 @@
-'use strict'
-
-module.exports = require('./lib/nodemailer-mock')
+module.exports = require('./lib/nodemailer-mock');
