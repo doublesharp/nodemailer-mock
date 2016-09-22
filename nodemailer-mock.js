@@ -1,6 +1,8 @@
+'use strict';
+
 const debug = require('debug')('nodemailer-mock');
 const nodemailer = require('nodemailer');
-const messages = require('./messages');
+const messages = require('./lib/messages');
 
 // this mocks the functionality of nodemailer
 const NodemailerMock = (function NodemailerMock() {

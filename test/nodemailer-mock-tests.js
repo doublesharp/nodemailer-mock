@@ -1,3 +1,5 @@
+'use strict';
+
 const should = require('should');
 const messages = require('../lib/messages');
 const nodemailer = require('../');
