@@ -6,7 +6,7 @@
     mocha: true,
   },
   rules: {
-    'import/no-extraneous-dependencies': ['error', { 'devDependencies': true }],
+    'import/no-extraneous-dependencies': [2, { 'devDependencies': true }],
     'global-require': 0,
   }
 }
