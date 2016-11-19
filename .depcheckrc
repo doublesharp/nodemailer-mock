@@ -2,13 +2,15 @@
 
 module.exports = function getOptions (depcheck){
   return {
-    ignoreBinPackage: true,
+    ignoreBinPackage: false,
     ignoreDirs: [
       'coverage',
       'dist',
       'tmp',
     ],
-    ignoreMatches: [],
+    ignoreMatches: [
+      'developer-tools'
+    ],
     parsers: { // the target parsers
       '*.js': depcheck.parser.es6
     },
