@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Mock nodemailer module for testing",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -14,7 +14,10 @@
     "coverage-badge": "./node_modules/.bin/istanbul-cobertura-badger -e 95 -g 85 -b \"${PWD##*/}\"",
     "lint": "./node_modules/.bin/eslint .",
     "validate": "./node_modules/.bin/module-validator",
-    "depcheck": "./node_modules/.bin/dependency-checker"
+    "depcheck": "./node_modules/.bin/dependency-checker",
+    "sloc": "./node_modules/.bin/sloc *.js lib test",
+    "sloc-app": "./node_modules/.bin/sloc *.js lib",
+    "sloc-test": "./node_modules/.bin/sloc test"
   },
   "repository": {
     "type": "git",
@@ -35,12 +38,12 @@
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
-    "developer-tools": "0.0.6",
+    "developer-tools": "0.0.7",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
     "eslint-plugin-mocha": "^4.7.0",
-    "eslint-plugin-react": "^6.7.1",
+    "eslint-plugin-react": "^6.8.0",
     "should": "^11.1.1"
   },
   "dependencies": {
