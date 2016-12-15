@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
-    "developer-tools": "0.0.13",
+    "developer-tools": "0.0.14",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
