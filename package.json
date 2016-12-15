@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Mock nodemailer module for testing",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -8,7 +8,7 @@
     "test": "./test"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha",
+    "test": "./node_modules/.bin/mocha",
     "coverage-report": "./node_modules/.bin/istanbul-coverage-report",
     "coverage": "npm run coverage-report && open ./coverage/lcov-report/index.html",
     "coverage-badge": "./node_modules/.bin/istanbul-cobertura-badger -e 95 -g 85 -b \"${PWD##*/}\"",
@@ -17,7 +17,8 @@
     "depcheck": "./node_modules/.bin/dependency-checker",
     "sloc": "./node_modules/.bin/sloc *.js lib test",
     "sloc-app": "./node_modules/.bin/sloc *.js lib",
-    "sloc-test": "./node_modules/.bin/sloc test"
+    "sloc-test": "./node_modules/.bin/sloc test",
+    "inspect": "NODE_ENV=test ./node_modules/.bin/mocha -s 0 --inspect --debug-brk"
   },
   "repository": {
     "type": "git",
@@ -38,21 +39,24 @@
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
-    "developer-tools": "0.0.7",
+    "developer-tools": "0.0.13",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
     "eslint-plugin-mocha": "^4.7.0",
     "eslint-plugin-react": "^6.8.0",
-    "should": "^11.1.1"
+    "should": "^11.1.2"
   },
   "dependencies": {
-    "debug": "^2.3.3",
-    "nodemailer": "^2.6.4"
+    "debug": "^2.4.3",
+    "developer-tools": "0.0.14",
+    "email-templates-mock": "^1.1.5",
+    "nodemailer": "^2.7.0"
   },
   "pre-commit": [
     "lint",
     "validate",
     "depcheck"
-  ]
+  ],
+  "pre-push": []
 }
