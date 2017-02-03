@@ -9,7 +9,13 @@ module.exports = function getOptions (depcheck){
       'tmp',
     ],
     ignoreMatches: [
-      'developer-tools'
+      'depcheck',
+      'istanbul',
+      'istanbul-cobertura-badger',
+      'mocha',
+      'nodemon',
+      'sloc',
+      'spec-xunit-file'
     ],
     parsers: { // the target parsers
       '*.js': depcheck.parser.es6

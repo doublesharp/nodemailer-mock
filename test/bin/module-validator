@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+(npm ls > /dev/null \
+  && echo "Project is valid.") \
+  || echo "Please correct the errors above."
