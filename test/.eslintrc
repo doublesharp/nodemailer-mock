@@ -1,12 +1,11 @@
 {
   plugins: [
-      'mocha'
+    'mocha'
   ],
   env: {
-    mocha: true,
+    'mocha': true,
   },
   rules: {
-    'import/no-extraneous-dependencies': [2, { 'devDependencies': true }],
     'global-require': 0,
   }
 }

@@ -1,11 +1,27 @@
 {
-  extends: 'airbnb',
+  extends: 'google',
   installedESLint: true,
   env: {
     es6: true,
     node: true
   },
-  "rules": {
-  	strict: 0,
+  rules: {
+    'strict': 0,
+    'max-len': ['error', 120, 2, {
+      'ignoreStrings': true,
+      'ignoreTemplateLiterals': true,
+    }],
+    'quotes': ['error', 'single', {
+      'avoidEscape': true,
+    }],
+    'object-curly-spacing': ['error', 'always'],
+    'no-underscore-dangle': 0,
+    'no-param-reassign': 0,
+    'prefer-template': 0,
+    'comma-dangle': ['error', {
+      arrays: 'only-multiline',
+      objects: 'only-multiline',
+      functions: 'never'
+    }]
   }
 }

@@ -45,7 +45,7 @@ const NodemailerMock = (function NodemailerMock() {
         // indicate that sendMail() has been called
         debug('transport.sendMail', email);
         // start with a basic info object
-        const info = messages.info;
+        const info = messages.info();
         determineResponseSuccess()
         .then(() => {
           // Resolve/Success
@@ -93,7 +93,6 @@ const NodemailerMock = (function NodemailerMock() {
     mock: {
       /**
        * determine if sendMail() should return errors once then succeed
-       * @return void
        */
       shouldFailOnce: () => {
         shouldFail = shouldFailOnce = true;
@@ -101,8 +100,7 @@ const NodemailerMock = (function NodemailerMock() {
 
       /**
        * determine if sendMail() should return errors
-       * @param  boolean true will return errors, false will return successes
-       * @return void
+       * @param  {boolean} isFail true will return errors, false will return successes
        */
       shouldFail: (isFail) => {
         shouldFail = isFail;
@@ -111,7 +109,6 @@ const NodemailerMock = (function NodemailerMock() {
       /**
        * determine if transport.verify() should be mocked or not
        * @param  {Boolean} isMocked if the function should be mocked
-       * @return void
        */
       mockedVerify: (isMocked) => {
         mockedVerify = isMocked;
@@ -119,8 +116,7 @@ const NodemailerMock = (function NodemailerMock() {
 
       /**
        * set the response messages for successes
-       * @param  String|Object response
-       * @return void
+       * @param  {Mixed} response
        */
       successResponse: (response) => {
         successResponse = response;
@@ -128,8 +124,7 @@ const NodemailerMock = (function NodemailerMock() {
 
       /**
        * set the response messages for failures
-       * @param  String|Object response
-       * @return void
+       * @param  {Mixed} response
        */
       failResponse: (response) => {
         failResponse = response;
@@ -137,13 +132,12 @@ const NodemailerMock = (function NodemailerMock() {
 
       /**
        * get an array of sent emails
-       * @return Object[] an array of emails
+       * @return {Object[]} an array of emails
        */
       sentMail: () => sentMail,
 
       /**
        * reset mock values to defaults
-       * @return void
        */
       reset: () => {
         sentMail = [];
