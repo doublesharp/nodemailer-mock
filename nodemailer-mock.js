@@ -41,28 +41,14 @@ const NodemailerMock = (function NodemailerMock() {
 
     return {
       // this will mock the nodemailer.transport.sendMail()
-      sendMail: (email, cb) => {
+      sendMail: (email, callback) => {
         // indicate that sendMail() has been called
         debug('transport.sendMail', email);
         // support either callback or promise api
-        let promise;
-        let callback = cb;
-        if (!callback && typeof Promise === 'function') {
-          promise = new Promise((resolve, reject) => {
-            callback = function resolver() {
-              const args = Array.prototype.slice.call(arguments); // eslint-disable-line prefer-rest-params, max-len
-              const err = args.shift();
-              if (err) {
-                reject(err);
-              } else {
-                resolve.apply(this, args);
-              }
-            };
-          });
-        }
+        const isPromise = !callback && typeof Promise === 'function';
         // start with a basic info object
         const info = messages.info();
-        determineResponseSuccess()
+        return determineResponseSuccess()
         .then(() => {
           // Resolve/Success
           // add the email to our cache
@@ -72,6 +58,9 @@ const NodemailerMock = (function NodemailerMock() {
           // indicate that we are sending success
           debug('transport.sendMail', 'SUCCESS', info);
           // return success
+          if (isPromise) {
+            return Promise.resolve(info);
+          }
           return callback(null, info);
         })
         .catch(() => {
@@ -81,9 +70,11 @@ const NodemailerMock = (function NodemailerMock() {
           // indicate that we are sending an error
           debug('transport.sendMail', 'FAIL', failResponse, info);
           // return the error
+          if (isPromise) {
+            return Promise.reject(failResponse);
+          }
           return callback(failResponse, info);
         });
-        return promise;
       },
 
       verify: (callback) => {
