@@ -41,9 +41,25 @@ const NodemailerMock = (function NodemailerMock() {
 
     return {
       // this will mock the nodemailer.transport.sendMail()
-      sendMail: (email, callback) => {
+      sendMail: (email, cb) => {
         // indicate that sendMail() has been called
         debug('transport.sendMail', email);
+        // support either callback or promise api
+        let promise;
+        let callback = cb;
+        if (!callback && typeof Promise === 'function') {
+          promise = new Promise((resolve, reject) => {
+            callback = function resolver() {
+              const args = Array.prototype.slice.call(arguments); // eslint-disable-line prefer-rest-params, max-len
+              const err = args.shift();
+              if (err) {
+                reject(err);
+              } else {
+                resolve.apply(this, args);
+              }
+            };
+          });
+        }
         // start with a basic info object
         const info = messages.info();
         determineResponseSuccess()
@@ -67,6 +83,7 @@ const NodemailerMock = (function NodemailerMock() {
           // return the error
           return callback(failResponse, info);
         });
+        return promise;
       },
 
       verify: (callback) => {
