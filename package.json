@@ -42,9 +42,9 @@
   "devDependencies": {
     "colors": "^1.1.2",
     "depcheck": "^0.6.7",
-    "eslint": "^3.19.0",
+    "eslint": "^4.1.1",
     "eslint-config-google": "^0.8.0",
-    "eslint-plugin-mocha": "^4.9.0",
+    "eslint-plugin-mocha": "^4.11.0",
     "istanbul": "^0.4.5",
     "istanbul-cobertura-badger": "https://github.com/doublesharp/istanbul-cobertura-badger.git",
     "mocha": "^3.4.2",
