@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Mock nodemailer module for testing",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -42,8 +42,8 @@
   "devDependencies": {
     "colors": "^1.1.2",
     "depcheck": "^0.6.7",
-    "eslint": "^4.1.1",
-    "eslint-config-google": "^0.8.0",
+    "eslint": "^4.2.0",
+    "eslint-config-google": "^0.9.1",
     "eslint-plugin-mocha": "^4.11.0",
     "istanbul": "^0.4.5",
     "istanbul-cobertura-badger": "https://github.com/doublesharp/istanbul-cobertura-badger.git",
