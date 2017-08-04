@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Mock nodemailer module for testing",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -42,12 +42,12 @@
   "devDependencies": {
     "colors": "^1.1.2",
     "depcheck": "^0.6.7",
-    "eslint": "^4.2.0",
+    "eslint": "^4.3.0",
     "eslint-config-google": "^0.9.1",
     "eslint-plugin-mocha": "^4.11.0",
     "istanbul": "^0.4.5",
     "istanbul-cobertura-badger": "https://github.com/doublesharp/istanbul-cobertura-badger.git",
-    "mocha": "^3.4.2",
+    "mocha": "^3.5.0",
     "should": "^11.2.1",
     "sloc": "^0.2.0",
     "spec-xunit-file": "^0.0.1-3"

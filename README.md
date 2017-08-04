@@ -13,8 +13,13 @@ Mocked nodemailer module for unit testing.
 
 # install
 
+
 ```
 npm install nodemailer-mock --save-dev
+```
+
+```
+yarn add nodemailer-mock
 ```
 
 # mock api
@@ -43,13 +48,13 @@ There are some special methods available on the mocked module to help with testi
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
 
 ```
-'use strict'
-
 const nodemailerMock = require('nodemailer-mock');
 const transport = nodemailerMock.createTransport();
 
-// send an email
-const email = //... the email you want to send
+// the email you want to send
+const email = ... // <-- your email here
+
+// send an email with nodestyle callback
 transport.sendMail(email, function(err, info) {
   if (err) {
     console.log('Error!', err, info);
@@ -58,8 +63,17 @@ transport.sendMail(email, function(err, info) {
   }
 }
 
+// send an email with promises
+transport.sendMail(email)
+.then(function(info) {
+  console.log('Success!', info);
+})
+.catch(function(err) {
+  console.log('Error!', err);
+});
+
 // verify a transport
-transport.verify(function(err, success){
+transport.verify(function(err, success) {
   if (err) {
     console.log('Error!', err);
   } else {
@@ -69,11 +83,11 @@ transport.verify(function(err, success){
 ```
 
 # example using mocha and mockery
-Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`
+Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that
+any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use
+the unmocked version from the module cache.
 
 ```
-'use strict'
-
 const should = require('should');
 const mockery = require('mockery');
 const nodemailerMock = require('nodemailer-mock');
@@ -94,9 +108,14 @@ describe('Tests that send email', function() {
     will get our nodemailerMock */
     mockery.registerMock('nodemailer', nodemailerMock)
     
-    // IMPORTANT!
+    /*
+    ##################
+    ### IMPORTANT! ###
+    ##################
+    */
     /* Make sure anything that uses nodemailer is loaded here, 
-    after it is mocked... */
+    after it is mocked just above... */
+
   });
   
   afterEach(function() {
@@ -112,7 +131,7 @@ describe('Tests that send email', function() {
   
   it('should send an email using nodemailer-mock', function(done) {
     // call a service that uses nodemailer
-    var response = ... // <-- your code here
+    var response = ... // <-- your email code here
     
     // a fake test for something on our response
     response.value.should.be.exactly('value');
