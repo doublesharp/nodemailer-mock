@@ -19,7 +19,7 @@ npm install nodemailer-mock --save-dev
 ```
 
 ```
-yarn add nodemailer-mock
+yarn add -D nodemailer-mock
 ```
 
 # mock api
