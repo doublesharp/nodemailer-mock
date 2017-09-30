@@ -5,8 +5,8 @@
 ![Code Coverage](https://jenkins.doublesharp.com/badges/coverage/nodemailer-mock.svg)
 [![Code Climate](https://codeclimate.com/github/doublesharp/nodemailer-mock/badges/gpa.svg)](https://codeclimate.com/github/doublesharp/nodemailer-mock)
 [![Issue Count](https://codeclimate.com/github/doublesharp/nodemailer-mock/badges/issue_count.svg)](https://codeclimate.com/github/doublesharp/nodemailer-mock)
-![Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock.svg)
-![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)
+[![Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock.svg)](https://david-dm.org/doublesharp/nodemailer-mock)
+[![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)](https://david-dm.org/doublesharp/nodemailer-mock?type=dev)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
 Mocked nodemailer module for unit testing.
