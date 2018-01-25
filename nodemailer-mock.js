@@ -145,6 +145,10 @@ function NodemailerMock(nodemailer) {
         debug('Subscribe to event' + name);
       },
 
+      isIdle: () => {
+        return true;
+      },
+
       // the options this transport was created with
       mock: {
         options,
