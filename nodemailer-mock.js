@@ -40,6 +40,7 @@ function NodemailerMock(nodemailer) {
   let _shouldFail = false;
   let _shouldFailOnce = false;
   let _shouldFailCheck = null;
+  let _shouldAreIdle = true;
 
   // Determine if the test should return success or failure
   const determineResponseSuccess = function determineResponseSuccess(email) {
@@ -146,7 +147,7 @@ function NodemailerMock(nodemailer) {
       },
 
       isIdle: () => {
-        return true;
+          return _shouldAreIdle;
       },
 
       // the options this transport was created with
@@ -173,6 +174,11 @@ function NodemailerMock(nodemailer) {
      * @param  {boolean} isFail true will return errors, false will return successes
      */
     setShouldFail: (isFail) => (_shouldFail = isFail),
+    /**
+     * determine if pool should return iddle 
+     * @param  {boolean} isIdle true will simulates iddle state 
+     */
+    setShouldAreIdle: (isIdle) => (_shouldAreIdle = isIdle),
     /**
      * determine if transport.verify() should be mocked or not
      * @param  {boolean} isMocked if the function should be mocked
@@ -206,6 +212,7 @@ function NodemailerMock(nodemailer) {
       _userPlugins = { ..._userPluginsDefault };
       _sentMail = [];
       _shouldFail = _shouldFailOnce = false;
+      _shouldAreIdle = false;
       _successResponse = messages.success_response;
       _failResponse = messages.fail_response;
       _mockedVerify = true;
