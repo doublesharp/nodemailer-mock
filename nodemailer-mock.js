@@ -140,6 +140,11 @@ function NodemailerMock(nodemailer) {
 
         return;
       },
+
+      on: (name) => {
+        debug('Subscribe to event' + name);
+      },
+
       // the options this transport was created with
       mock: {
         options,
