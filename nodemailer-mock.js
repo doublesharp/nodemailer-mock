@@ -80,9 +80,12 @@ const NodemailerMock = (function NodemailerMock() {
       verify: (callback) => {
         // should we mock the verify request?
         if (mockedVerify) {
+          // support either callback or promise api
+          const isPromise = !callback && typeof Promise === 'function';
+
           return determineResponseSuccess()
-          .then(() => callback(null, successResponse))
-          .catch(() => callback(failResponse));
+          .then(() => isPromise ? Promise.resolve(successResponse) : callback(null, successResponse))
+          .catch(() => isPromise ? Promise.reject(failResponse) : callback(failResponse));
         }
         // use the real nodemailer transport to verify
         return transport.verify(callback);
@@ -152,6 +155,7 @@ const NodemailerMock = (function NodemailerMock() {
         shouldFail = shouldFailOnce = false;
         successResponse = messages.success_response;
         failResponse = messages.fail_response;
+        mockedVerify = true;
       },
     },
   };
