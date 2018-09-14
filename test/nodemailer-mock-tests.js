@@ -146,10 +146,10 @@ describe('Testing nodemailer-mock...', () => {
   describe('sendMail promise api', () => {
     it('should succeed for email sending', (done) => {
       transport.sendMail('Email')
-      .then((info) => {
-        info.response.should.equal(messages.success_response);
-        done();
-      });
+          .then((info) => {
+            info.response.should.equal(messages.success_response);
+            done();
+          });
     });
 
     it('should have the sent email available in the mock.sentMail()', (done) => {
@@ -157,15 +157,15 @@ describe('Testing nodemailer-mock...', () => {
       const email = 'Check for this value';
       // Send an email that should succeed
       transport.sendMail(email)
-      .then((info) => {
-        info.response.should.equal(messages.success_response);
-        // Check that our email was put into the sentMail cache
-        const sentMail = nodemailer.mock.sentMail();
-        should(sentMail).not.be.empty();
-        sentMail.length.should.equal(1);
-        sentMail[0].should.equal(email);
-        done();
-      });
+          .then((info) => {
+            info.response.should.equal(messages.success_response);
+            // Check that our email was put into the sentMail cache
+            const sentMail = nodemailer.mock.sentMail();
+            should(sentMail).not.be.empty();
+            sentMail.length.should.equal(1);
+            sentMail[0].should.equal(email);
+            done();
+          });
     });
 
     it('should fail once then succeed for email sending', (done) => {
@@ -175,14 +175,14 @@ describe('Testing nodemailer-mock...', () => {
 
       // Send an email that should fail
       transport.sendMail('Email')
-      .catch((err) => {
-        should(err).equal('nodemailer-mock failure');
-        transport.sendMail('Email')
-        .then((info) => {
-          info.response.should.equal(messages.success_response);
-          done();
-        });
-      });
+          .catch((err) => {
+            should(err).equal('nodemailer-mock failure');
+            transport.sendMail('Email')
+                .then((info) => {
+                  info.response.should.equal(messages.success_response);
+                  done();
+                });
+          });
     });
 
     it('should fail more than once if not reset', (done) => {
@@ -191,19 +191,19 @@ describe('Testing nodemailer-mock...', () => {
 
       // Send an email that should fail
       transport.sendMail('Email 1')
-      .catch((err1) => {
-        should(err1).equal('nodemailer-mock failure');
-        transport.sendMail('Email 2')
-        .catch((err2) => {
-          should(err2).equal('nodemailer-mock failure');
-          nodemailer.mock.shouldFail(false);
-          transport.sendMail('Email 3')
-          .then((info) => {
-            info.response.should.equal(messages.success_response);
-            done();
+          .catch((err1) => {
+            should(err1).equal('nodemailer-mock failure');
+            transport.sendMail('Email 2')
+                .catch((err2) => {
+                  should(err2).equal('nodemailer-mock failure');
+                  nodemailer.mock.shouldFail(false);
+                  transport.sendMail('Email 3')
+                      .then((info) => {
+                        info.response.should.equal(messages.success_response);
+                        done();
+                      });
+                });
           });
-        });
-      });
     });
 
     it('should have a custom success message', (done) => {
@@ -213,10 +213,10 @@ describe('Testing nodemailer-mock...', () => {
 
       // Send an email that should succeed
       transport.sendMail('Email')
-      .then((info) => {
-        info.response.should.equal(customSuccess);
-        done();
-      });
+          .then((info) => {
+            info.response.should.equal(customSuccess);
+            done();
+          });
     });
 
     it('should have a custom error message', (done) => {
@@ -230,10 +230,10 @@ describe('Testing nodemailer-mock...', () => {
 
       // Send an email that should fail
       transport.sendMail('Email')
-      .catch((err) => {
-        err.should.equal(customError);
-        done();
-      });
+          .catch((err) => {
+            err.should.equal(customError);
+            done();
+          });
     });
   });
 });

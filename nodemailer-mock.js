@@ -53,51 +53,51 @@ const NodemailerMock = (function NodemailerMock() {
         // start with a basic info object
         const info = messages.info();
         return determineResponseSuccess()
-        .then(() => {
-          // Resolve/Success
-          // add the email to our cache
-          sentMail.push(email);
-          // update the response
-          info.response = successResponse;
-          // indicate that we are sending success
-          debug('transport.sendMail', 'SUCCESS', info);
-          // return success
-          if (isPromise) {
-            return Promise.resolve(info);
-          }
-          return callback(null, info);
-        })
-        .catch(() => {
-          // Reject/Failure
-          // update the response
-          info.response = failResponse;
-          // indicate that we are sending an error
-          debug('transport.sendMail', 'FAIL', failResponse, info);
-          // return the error
-          if (isPromise) {
-            return Promise.reject(failResponse);
-          }
-          return callback(failResponse, info);
-        });
+            .then(() => {
+              // Resolve/Success
+              // add the email to our cache
+              sentMail.push(email);
+              // update the response
+              info.response = successResponse;
+              // indicate that we are sending success
+              debug('transport.sendMail', 'SUCCESS', info);
+              // return success
+              if (isPromise) {
+                return Promise.resolve(info);
+              }
+              return callback(null, info);
+            })
+            .catch(() => {
+              // Reject/Failure
+              // update the response
+              info.response = failResponse;
+              // indicate that we are sending an error
+              debug('transport.sendMail', 'FAIL', failResponse, info);
+              // return the error
+              if (isPromise) {
+                return Promise.reject(failResponse);
+              }
+              return callback(failResponse, info);
+            });
       },
 
       verify: (callback) => {
         // should we mock the verify request?
         if (mockedVerify) {
           return determineResponseSuccess()
-          .then(() => callback(null, successResponse))
-          .catch(() => callback(failResponse));
+              .then(() => callback(null, successResponse))
+              .catch(() => callback(failResponse));
         }
         // use the real nodemailer transport to verify
         return transport.verify(callback);
       },
-      
+
       use: (step, plugin) => {
         step = (step || '').toString();
         if (!_userPlugins.hasOwnProperty(step)) {
-            _userPlugins[step] = [plugin];
+          _userPlugins[step] = [plugin];
         } else {
-            _userPlugins[step].push(plugin);
+          _userPlugins[step].push(plugin);
         }
 
         return;
