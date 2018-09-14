@@ -15,6 +15,15 @@ describe('Testing nodemailer-mock...', () => {
     nodemailer.mock.reset();
   });
 
+  it('should allow plugins to be added', (done) => {
+    // try to add a plugin, twice for coverage;
+    transport.use('plugin-name', {});
+    transport.use('plugin-name', {});
+    // allow for falsey step arg
+    transport.use(false, {});
+    done();
+  });
+
   it('should succeed for email sending', (done) => {
     // Send an email that should succeed
     transport.sendMail('Email', (err, info) => {
