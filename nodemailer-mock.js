@@ -14,7 +14,7 @@ const NodemailerMock = (function NodemailerMock() {
   let failResponse = messages.fail_response;
   // Sent mail cache
   let sentMail = [];
-  let _userPlugins = {
+  const _userPlugins = {
     compile: [],
     stream: []
   };
