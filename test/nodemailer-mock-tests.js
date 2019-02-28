@@ -244,5 +244,34 @@ describe('Testing nodemailer-mock...', () => {
             done();
           });
     });
+
+    it('should return verify success using the mocked nodemailer transport', (done) => {
+      transport.verify()
+      .then((success) => {
+        success.should.equal(messages.success_response);
+        done();
+      });
+    });
+
+    it('should return verify failure using the mocked nodemailer transport', (done) => {
+      nodemailer.mock.shouldFailOnce();
+      transport.verify()
+      .catch((err) => {
+        should(err).not.equal(null);
+        err.should.be.exactly(messages.fail_response);
+        done();
+      });
+    });
+
+    it('should return verify error using the real nodemailer transport', (done) => {
+      nodemailer.mock.mockedVerify(false);
+      transport.verify()
+      .catch((err) => {
+        should(err).not.equal(null);
+        err.code.should.equal('ECONNECTION');
+        err.command.should.equal('CONN');
+        done();
+      });
+    });
   });
 });
