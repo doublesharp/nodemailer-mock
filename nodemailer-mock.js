@@ -14,6 +14,10 @@ const NodemailerMock = (function NodemailerMock() {
   let failResponse = messages.fail_response;
   // Sent mail cache
   let sentMail = [];
+  const _userPlugins = {
+    compile: [],
+    stream: []
+  };
   // Should the callback be a success or failure?
   let shouldFail = false;
   let shouldFailOnce = false;
@@ -49,32 +53,32 @@ const NodemailerMock = (function NodemailerMock() {
         // start with a basic info object
         const info = messages.info();
         return determineResponseSuccess()
-        .then(() => {
-          // Resolve/Success
-          // add the email to our cache
-          sentMail.push(email);
-          // update the response
-          info.response = successResponse;
-          // indicate that we are sending success
-          debug('transport.sendMail', 'SUCCESS', info);
-          // return success
-          if (isPromise) {
-            return Promise.resolve(info);
-          }
-          return callback(null, info);
-        })
-        .catch(() => {
-          // Reject/Failure
-          // update the response
-          info.response = failResponse;
-          // indicate that we are sending an error
-          debug('transport.sendMail', 'FAIL', failResponse, info);
-          // return the error
-          if (isPromise) {
-            return Promise.reject(failResponse);
-          }
-          return callback(failResponse, info);
-        });
+            .then(() => {
+              // Resolve/Success
+              // add the email to our cache
+              sentMail.push(email);
+              // update the response
+              info.response = successResponse;
+              // indicate that we are sending success
+              debug('transport.sendMail', 'SUCCESS', info);
+              // return success
+              if (isPromise) {
+                return Promise.resolve(info);
+              }
+              return callback(null, info);
+            })
+            .catch(() => {
+              // Reject/Failure
+              // update the response
+              info.response = failResponse;
+              // indicate that we are sending an error
+              debug('transport.sendMail', 'FAIL', failResponse, info);
+              // return the error
+              if (isPromise) {
+                return Promise.reject(failResponse);
+              }
+              return callback(failResponse, info);
+            });
       },
 
       verify: (callback) => {
@@ -84,11 +88,22 @@ const NodemailerMock = (function NodemailerMock() {
           const isPromise = !callback && typeof Promise === 'function';
 
           return determineResponseSuccess()
-          .then(() => isPromise ? Promise.resolve(successResponse) : callback(null, successResponse))
-          .catch(() => isPromise ? Promise.reject(failResponse) : callback(failResponse));
+              .then(() => isPromise ? Promise.resolve(successResponse) : callback(null, successResponse))
+              .catch(() => isPromise ? Promise.reject(failResponse) : callback(failResponse));
         }
         // use the real nodemailer transport to verify
         return transport.verify(callback);
+      },
+
+      use: (step, plugin) => {
+        step = (step || '').toString();
+        if (!_userPlugins.hasOwnProperty(step)) {
+          _userPlugins[step] = [plugin];
+        } else {
+          _userPlugins[step].push(plugin);
+        }
+
+        return;
       },
       // the options this transport was created with
       mock: {
