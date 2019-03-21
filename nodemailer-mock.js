@@ -31,7 +31,7 @@ const NodemailerMock = (function NodemailerMock() {
         if (shouldFailOnce) {
           shouldFail = shouldFailOnce = false;
         }
-        return reject();
+        return reject(new Error('nodemailer-mock fail response'));
       }
       return resolve();
     });
