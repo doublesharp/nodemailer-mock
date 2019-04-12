@@ -21,82 +21,113 @@ yarn add -D nodemailer-mock
 ```
 
 # mock api
-There are some special methods available on the mocked module to help with testing.
+There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked `nodemailer`.
 
 * `nodemailerMock.mock.reset()`
   * resets the mock class to default values
-* `nodemailerMock.mock.sentMail()`
+* `nodemailerMock.mock.getSentMail()`
   * returns an array of sent emails
-* `nodemailerMock.mock.shouldFailOnce()`
+* `nodemailerMock.mock.setShouldFailOnce()`
   * will return an error on the next call to `transport.sendMail()`
-* `nodemailerMock.mock.shouldFail(true|false)`
+* `nodemailerMock.mock.setShouldFail(true|false)`
   * indicate if errors should be returned for subsequent calls to `transport.sendMail()`
     * if `true`, return error
     * if `false`, return success
-* `nodemailerMock.mock.mockedVerify(true|false)`
+* `nodemailerMock.mock.setMockedVerify(true|false)`
   * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
     * if `true`, use a mocked callback
     * if `false`, pass through to a real `nodemailer` transport
-* `nodemailerMock.mock.successResponse(success)`
+* `nodemailerMock.mock.setSuccessResponse(success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
-* `nodemailerMock.mock.failResponse(err)`
+* `nodemailerMock.mock.setFailResponse(err)`
   * set the err that is returned in the callback for `transport.sendMail()`
+
+>_Note that the `.mock` methods in previous versions are aliased to the new names._
 
 # usage
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
 
+**setup test**
 ```
 const nodemailerMock = require('nodemailer-mock');
 const transport = nodemailerMock.createTransport();
 
 // the email you want to send
 const email = ... // <-- your email here
+```
 
-// send an email with nodestyle callback
+**use nodestyle callbacks**
+```
+// send with nodestyle callback
 transport.sendMail(email, function(err, info) {
   if (err) {
-    console.log('Error!', err, info);
-  } else {
-    console.log('Success!', info);
+    return console.log('Error!', err, info);
   }
+  return console.log('Success!', info);
 }
 
-// send an email with promises
-transport.sendMail(email)
-.then(function(info) {
-  console.log('Success!', info);
-})
-.catch(function(err) {
-  console.log('Error!', err);
-});
-
-// verify a transport
+// verify with nodestyle callback
 transport.verify(function(err, success) {
   if (err) {
-    console.log('Error!', err);
-  } else {
-    console.log('Success!', success);
+    return console.log('Error!', err);
   }
-})
+  return console.log('Success!', success);
+});
+```
+
+**use promises**
+```
+// send with promises
+transport.sendMail(email)
+  .then(function(info) {
+    console.log('Success!', info);
+  })
+  .catch(function(err) {
+    console.log('Error!', err);
+  });
+
+// verify with promises
+transport.verify()
+  .then(function(success) {
+    console.log('Success!', success);
+  });
+  .catch(function(err) {
+    console.log('Error!', err);
+  });
+```
+
+**use async/await**
+```
+// send an email with async / wait
+try {
+  const info = await transport.sendMail(email);
+} catch (err) {
+  console.log('Error!', err);
+}
+
+// verify with async / wait
+try {
+  const info = await transport.verify();
+} catch (err) {
+  console.log('Error!', err);
+}
 ```
 
 # example using mocha and mockery
-Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that
-any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use
-the unmocked version from the module cache.
+Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
 
 ```
 const should = require('should');
 const mockery = require('mockery');
 const nodemailerMock = require('nodemailer-mock');
 
-describe('Tests that send email', function() {
+describe('Tests that send email',  async () {
 
   /* This could be an app, Express, etc. It should be 
   instantiated *after* nodemailer is mocked. */
   let app = null;
 
-  before(function() {
+  before(async () {
     // Enable mockery to mock objects
     mockery.enable({
       warnOnUnregistered: false,
@@ -116,62 +147,56 @@ describe('Tests that send email', function() {
 
   });
   
-  afterEach(function() {
+  afterEach(async () {
     // Reset the mock back to the defaults after each test
     nodemailerMock.mock.reset();
   });
   
-  after(function() {
+  after(async () {
     // Remove our mocked nodemailer and disable mockery
     mockery.deregisterAll();
     mockery.disable();
   });
   
-  it('should send an email using nodemailer-mock', function(done) {
+  it('should send an email using nodemailer-mock', async () {
     // call a service that uses nodemailer
-    var response = ... // <-- your email code here
+    const response = ... // <-- your email code here
     
     // a fake test for something on our response
     response.value.should.be.exactly('value');
     
     // get the array of emails we sent
-    const sentMail = nodemailerMock.mock.sentMail();
+    const sentMail = nodemailerMock.mock.getSentMail();
     
     // we should have sent one email
     sentMail.length.should.be.exactly(1);
     
     // check the email for something
     sentMail[0].property.should.be.exactly('foobar');
-    
-    done();
   });
   
-  it('should fail to send an email using nodemailer-mock', function(done) {
+  it('should fail to send an email using nodemailer-mock', async (done) {
     // tell the mock class to return an error
     const err = 'My custom error';
-    nodemailerMock.mock.shouldFailOnce();
-    nodemailerMock.mock.failResponse(err);
+    nodemailerMock.mock.setShouldFailOnce();
+    nodemailerMock.mock.setFailResponse(err);
   
     // call a service that uses nodemailer
     var response = ... // <-- your code here
     
     // a fake test for something on our response
     response.error.should.be.exactly(err);
-    
-    done();
   });
   
-  it('should verify using the real nodemailer transport', function(done) {
+  it('should verify using the real nodemailer transport', async (done) {
     // tell the mock class to pass verify requests to nodemailer
-    nodemailerMock.mock.mockedVerify(false);
+    nodemailerMock.mock.setMockedVerify(false);
   
     // call a service that uses nodemailer
     var response = ... // <-- your code here
     
     /* calls to transport.verify() will be passed through, 
        transport.sendMail() is still mocked */
-
-    done();
   });
 });
 ```

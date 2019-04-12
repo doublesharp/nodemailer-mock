@@ -9,15 +9,18 @@ const NodemailerMock = (function NodemailerMock() {
   // the real nodemailer transport
   let transport = null;
   let mockedVerify = true;
+
   // our response messages
   let successResponse = messages.success_response;
   let failResponse = messages.fail_response;
+
   // Sent mail cache
   let sentMail = [];
   const _userPlugins = {
     compile: [],
-    stream: []
+    stream: [],
   };
+
   // Should the callback be a success or failure?
   let shouldFail = false;
   let shouldFailOnce = false;
@@ -37,6 +40,7 @@ const NodemailerMock = (function NodemailerMock() {
     });
   };
 
+  // return an object with the expected functions
   const createTransport = function createTransport(options) {
     // indicate that we are creating a transport
     debug('createTransport', options);
@@ -112,67 +116,80 @@ const NodemailerMock = (function NodemailerMock() {
     };
   };
 
+  // these functions provide test functionality
+  const mock = {
+    /**
+     * determine if sendMail() should return errors once then succeed
+     */
+    setShouldFailOnce: () => {
+      shouldFail = shouldFailOnce = true;
+    },
+
+    /**
+     * determine if sendMail() should return errors
+     * @param  {boolean} isFail true will return errors, false will return successes
+     */
+    setShouldFail: (isFail) => {
+      shouldFail = isFail;
+    },
+
+    /**
+     * determine if transport.verify() should be mocked or not
+     * @param  {Boolean} isMocked if the function should be mocked
+     */
+    setMockedVerify: (isMocked) => {
+      mockedVerify = isMocked;
+    },
+
+    /**
+     * set the response messages for successes
+     * @param  {Mixed} response
+     */
+    setSuccessResponse: (response) => {
+      successResponse = response;
+    },
+
+    /**
+     * set the response messages for failures
+     * @param  {Mixed} response
+     */
+    setFailResponse: (response) => {
+      failResponse = response;
+    },
+
+    /**
+     * get an array of sent emails
+     * @return {Object[]} an array of emails
+     */
+    getSentMail: () => sentMail,
+
+    /**
+     * reset mock values to defaults
+     */
+    reset: () => {
+      sentMail = [];
+      shouldFail = shouldFailOnce = false;
+      successResponse = messages.success_response;
+      failResponse = messages.fail_response;
+      mockedVerify = true;
+    },
+  };
+
+  // legacy aliases
+  Object.assign(mock, {
+    shouldFailOnce: mock.setShouldFaileOnce,
+    shouldFail: mock.setShouldFail,
+    mockedVerify: mock.setMockedVerify,
+    successResponse: mock.setSuccessResponse,
+    failResponse: mock.setFailResponse,
+    sentMail: mock.getSentMail,
+  });
+
   return {
     // Our mocked transport
     createTransport,
     // Test helper methods
-    mock: {
-      /**
-       * determine if sendMail() should return errors once then succeed
-       */
-      shouldFailOnce: () => {
-        shouldFail = shouldFailOnce = true;
-      },
-
-      /**
-       * determine if sendMail() should return errors
-       * @param  {boolean} isFail true will return errors, false will return successes
-       */
-      shouldFail: (isFail) => {
-        shouldFail = isFail;
-      },
-
-      /**
-       * determine if transport.verify() should be mocked or not
-       * @param  {Boolean} isMocked if the function should be mocked
-       */
-      mockedVerify: (isMocked) => {
-        mockedVerify = isMocked;
-      },
-
-      /**
-       * set the response messages for successes
-       * @param  {Mixed} response
-       */
-      successResponse: (response) => {
-        successResponse = response;
-      },
-
-      /**
-       * set the response messages for failures
-       * @param  {Mixed} response
-       */
-      failResponse: (response) => {
-        failResponse = response;
-      },
-
-      /**
-       * get an array of sent emails
-       * @return {Object[]} an array of emails
-       */
-      sentMail: () => sentMail,
-
-      /**
-       * reset mock values to defaults
-       */
-      reset: () => {
-        sentMail = [];
-        shouldFail = shouldFailOnce = false;
-        successResponse = messages.success_response;
-        failResponse = messages.fail_response;
-        mockedVerify = true;
-      },
-    },
+    mock,
   };
 }());
 
