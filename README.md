@@ -175,7 +175,7 @@ describe('Tests that send email',  async () {
     sentMail[0].property.should.be.exactly('foobar');
   });
   
-  it('should fail to send an email using nodemailer-mock', async (done) {
+  it('should fail to send an email using nodemailer-mock', async () {
     // tell the mock class to return an error
     const err = 'My custom error';
     nodemailerMock.mock.setShouldFailOnce();
@@ -188,7 +188,7 @@ describe('Tests that send email',  async () {
     response.error.should.be.exactly(err);
   });
   
-  it('should verify using the real nodemailer transport', async (done) {
+  it('should verify using the real nodemailer transport', async () {
     // tell the mock class to pass verify requests to nodemailer
     nodemailerMock.mock.setMockedVerify(false);
   
