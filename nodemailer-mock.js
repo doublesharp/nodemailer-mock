@@ -177,7 +177,7 @@ const NodemailerMock = (function NodemailerMock() {
 
   // legacy aliases
   Object.assign(mock, {
-    shouldFailOnce: mock.setShouldFaileOnce,
+    shouldFailOnce: mock.setShouldFailOnce,
     shouldFail: mock.setShouldFail,
     mockedVerify: mock.setMockedVerify,
     successResponse: mock.setSuccessResponse,
