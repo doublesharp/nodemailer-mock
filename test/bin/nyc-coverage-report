@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+rm -rf ./coverage
+mkdir -p coverage
+XUNIT_FILE=./coverage/xunit.xml \
+  ./node_modules/.bin/nyc \
+  --reporter=lcov \
+  --reporter=cobertura \
+  ./node_modules/.bin/_mocha \
+  -- \
+  --reporter=spec-xunit-file \
+  -s 0
