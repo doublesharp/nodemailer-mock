@@ -101,7 +101,7 @@ const NodemailerMock = (function NodemailerMock() {
 
       use: (step, plugin) => {
         step = (step || '').toString();
-        if (!_userPlugins.hasOwnProperty(step)) {
+        if (!Object.prototype.hasOwnProperty.call(_userPlugins, step)) {
           _userPlugins[step] = [plugin];
         } else {
           _userPlugins[step].push(plugin);
