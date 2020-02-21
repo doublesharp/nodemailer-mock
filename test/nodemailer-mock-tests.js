@@ -187,7 +187,7 @@ describe('Testing nodemailer-mock...', () => {
       // Send an email that should fail
       transport.sendMail('Email')
           .catch((err) => {
-            should(err).equal('nodemailer-mock failure');
+            should(err.message).equal('nodemailer-mock failure');
             transport.sendMail('Email')
                 .then((info) => {
                   info.response.should.equal(messages.success_response);
@@ -203,10 +203,10 @@ describe('Testing nodemailer-mock...', () => {
       // Send an email that should fail
       transport.sendMail('Email 1')
           .catch((err1) => {
-            should(err1).equal('nodemailer-mock failure');
+            should(err1.message).equal('nodemailer-mock failure');
             transport.sendMail('Email 2')
                 .catch((err2) => {
-                  should(err2).equal('nodemailer-mock failure');
+                  should(err2.message).equal('nodemailer-mock failure');
                   nodemailer.mock.setShouldFail(false);
                   transport.sendMail('Email 3')
                       .then((info) => {
@@ -306,7 +306,7 @@ describe('Testing nodemailer-mock...', () => {
         await transport.sendMail('Email');
         throw new Error(); // this should not happen
       } catch (err) {
-        should(err).equal('nodemailer-mock failure');
+        should(err.message).equal('nodemailer-mock failure');
       }
 
       // This email should succeed
@@ -314,7 +314,7 @@ describe('Testing nodemailer-mock...', () => {
         const info = await transport.sendMail('Email');
         info.response.should.equal(messages.success_response);
       } catch (err) {
-        should(err).equal(null);
+        should(err.message).equal(null);
       }
     });
 
@@ -327,13 +327,13 @@ describe('Testing nodemailer-mock...', () => {
         await transport.sendMail('Email 1');
         throw new Error(); // this should not happen
       } catch (err) {
-        should(err).equal('nodemailer-mock failure');
+        should(err.message).equal('nodemailer-mock failure');
       }
       try {
         await transport.sendMail('Email 2');
         throw new Error(); // this should not happen
       } catch (err) {
-        should(err).equal('nodemailer-mock failure');
+        should(err.message).equal('nodemailer-mock failure');
       }
 
       nodemailer.mock.setShouldFail(false);

@@ -135,7 +135,7 @@ const NodemailerMock = (function NodemailerMock() {
 
     /**
      * determine if transport.verify() should be mocked or not
-     * @param  {Boolean} isMocked if the function should be mocked
+     * @param  {boolean} isMocked if the function should be mocked
      */
     setMockedVerify: (isMocked) => {
       mockedVerify = isMocked;
@@ -151,10 +151,10 @@ const NodemailerMock = (function NodemailerMock() {
 
     /**
      * set the response messages for failures
-     * @param  {Mixed} response
+     * @param  {Error} error
      */
-    setFailResponse: (response) => {
-      failResponse = response;
+    setFailResponse: (error) => {
+      failResponse = error;
     },
 
     /**
