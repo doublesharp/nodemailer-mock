@@ -26,7 +26,7 @@ There are some special methods available on the mocked module to help with testi
 * `nodemailerMock.mock.reset()`
   * resets the mock class to default values
 * `nodemailerMock.mock.getSentMail()`
-  * returns an array of sent emails
+  * returns an array of sent emails during your tests, since the last reset
 * `nodemailerMock.mock.setShouldFailOnce()`
   * will return an error on the next call to `transport.sendMail()`
 * `nodemailerMock.mock.setShouldFail({boolean} shouldFail)`
@@ -34,7 +34,7 @@ There are some special methods available on the mocked module to help with testi
     * if `true`, return error
     * if `false`, return success
 * `nodemailerMock.mock.setShouldFailCheck({Function} (email)=>{})`
-  * indicate if the specific email pass to the function should fail the call to `transport.sendMail()`
+  * indicate if the specific email passed to the function should fail the call to `transport.sendMail()`
     * if function returns `true`, return error
     * if function returns `false`, return success
 * `nodemailerMock.mock.setMockedVerify({boolean} isMocked)`
@@ -44,7 +44,7 @@ There are some special methods available on the mocked module to help with testi
 * `nodemailerMock.mock.setSuccessResponse({Mixed} success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
 * `nodemailerMock.mock.setFailResponse({Error} err)`
-  * set the Error that is returned in the callback for `transport.sendMail()`
+  * set the `Error` that is returned in the callback for `transport.sendMail()`
 
 >_Note that the `.mock` methods in previous versions are aliased to the new names._
 
