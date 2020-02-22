@@ -48,7 +48,7 @@ There are some special methods available on the mocked module to help with testi
 
 >_Note that the `.mock` methods in previous versions are aliased to the new names._
 
->_Version 1.5+ returns an `Error` object on error rather than a string.
+>_Version 1.5+ returns an `Error` object on error rather than a string._
 
 # usage
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
