@@ -248,7 +248,7 @@ describe('Testing nodemailer-mock...', () => {
       // Send an email that should fail
       transport.sendMail('FailMe')
         .catch((err) => {
-          should(err).equal('nodemailer-mock failure');
+          should(err.message).equal('nodemailer-mock failure');
           transport.sendMail('Email')
             .then((info) => {
               info.response.should.equal(messages.success_response);
@@ -393,7 +393,7 @@ describe('Testing nodemailer-mock...', () => {
         await transport.sendMail('FailMe');
         throw new Error(); // this should not happen
       } catch (err) {
-        should(err).equal('nodemailer-mock failure');
+        should(err.message).equal('nodemailer-mock failure');
       }
 
       // This email should succeed
