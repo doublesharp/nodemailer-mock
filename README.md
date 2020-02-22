@@ -29,24 +29,25 @@ There are some special methods available on the mocked module to help with testi
   * returns an array of sent emails
 * `nodemailerMock.mock.setShouldFailOnce()`
   * will return an error on the next call to `transport.sendMail()`
-* `nodemailerMock.mock.setShouldFail(true|false)`
+* `nodemailerMock.mock.setShouldFail({boolean} shouldFail)`
   * indicate if errors should be returned for subsequent calls to `transport.sendMail()`
     * if `true`, return error
     * if `false`, return success
-* `nodemailerMock.mock.setShouldFailCheck(function(email))`
+* `nodemailerMock.mock.setShouldFailCheck({Function} (email)=>{})`
   * indicate if the specific email should fail the call to `transport.sendMail()`
     * if function returns `true`, return error
     * if function returns `false`, return success
-* `nodemailerMock.mock.setMockedVerify(true|false)`
+* `nodemailerMock.mock.setMockedVerify({boolean} isMocked)`
   * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
     * if `true`, use a mocked callback
     * if `false`, pass through to a real `nodemailer` transport
-* `nodemailerMock.mock.setSuccessResponse(success)`
+* `nodemailerMock.mock.setSuccessResponse({Mixed} success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
-* `nodemailerMock.mock.setFailResponse(err)`
-  * set the err that is returned in the callback for `transport.sendMail()`
+* `nodemailerMock.mock.setFailResponse({Error} err)`
+  * set the Error that is returned in the callback for `transport.sendMail()`
 
 >_Note that the `.mock` methods in previous versions are aliased to the new names._
+>_Version 1.5+ returns an `Error` object on error rather than a string.
 
 # usage
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
@@ -181,7 +182,7 @@ describe('Tests that send email',  async () {
   
   it('should fail to send an email using nodemailer-mock', async () {
     // tell the mock class to return an error
-    const err = 'My custom error';
+    const err = new Error('My custom error');
     nodemailerMock.mock.setShouldFailOnce();
     nodemailerMock.mock.setFailResponse(err);
   
