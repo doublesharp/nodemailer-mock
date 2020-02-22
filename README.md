@@ -33,6 +33,10 @@ There are some special methods available on the mocked module to help with testi
   * indicate if errors should be returned for subsequent calls to `transport.sendMail()`
     * if `true`, return error
     * if `false`, return success
+* `nodemailerMock.mock.setShouldFailCheck(function(email))`
+  * indicate if the specific email should fail the call to `transport.sendMail()`
+    * if function returns `true`, return error
+    * if function returns `false`, return success
 * `nodemailerMock.mock.setMockedVerify(true|false)`
   * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
     * if `true`, use a mocked callback

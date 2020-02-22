@@ -24,10 +24,15 @@ const NodemailerMock = (function NodemailerMock() {
   // Should the callback be a success or failure?
   let shouldFail = false;
   let shouldFailOnce = false;
+  let shouldFailCheck = null;
 
   // Determine if the test should return success or failure
-  const determineResponseSuccess = function determineResponseSuccess() {
+  const determineResponseSuccess = function determineResponseSuccess(email) {
     return new Promise((resolve, reject) => {
+      // if shouldFailCheck defined use it
+      if (email && shouldFailCheck && shouldFailCheck(email)) {
+        return reject(new Error('nodemailer-mock fail response'));
+      }
       // determine if we want to return an error
       if (shouldFail) {
         // if this is a one time failure, reset the status
@@ -56,7 +61,7 @@ const NodemailerMock = (function NodemailerMock() {
         const isPromise = !callback && typeof Promise === 'function';
         // start with a basic info object
         const info = messages.info();
-        return determineResponseSuccess()
+        return determineResponseSuccess(email)
             .then(() => {
               // Resolve/Success
               // add the email to our cache
@@ -158,6 +163,14 @@ const NodemailerMock = (function NodemailerMock() {
     },
 
     /**
+     * set the check function that returns true if a message send should fail
+     * @param  {function} check
+     * * */
+    setShouldFailCheck: (check) => {
+      shouldFailCheck = check;
+    },
+
+    /**
      * get an array of sent emails
      * @return {Object[]} an array of emails
      */
@@ -172,6 +185,7 @@ const NodemailerMock = (function NodemailerMock() {
       successResponse = messages.success_response;
       failResponse = messages.fail_response;
       mockedVerify = true;
+      shouldFailCheck = null;
     },
   };
 
@@ -183,6 +197,7 @@ const NodemailerMock = (function NodemailerMock() {
     successResponse: mock.setSuccessResponse,
     failResponse: mock.setFailResponse,
     sentMail: mock.getSentMail,
+    shouldFailCheck: mock.shouldFailCheck,
   });
 
   return {

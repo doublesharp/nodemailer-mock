@@ -96,6 +96,27 @@ describe('Testing nodemailer-mock...', () => {
       });
     });
 
+    it('should fail if shouldFailCheck returns true for message', (done) => {
+      // Tell the mock to fail once then succeed
+      // (for testing retries, or so you dont have to reset a test)
+      nodemailer.mock.setShouldFailCheck((email) => {
+        return email === 'FailMe';
+      });
+
+      // Send an email that should fail
+      transport.sendMail('FailMe', (err1, info1) => {
+        should(err1).equal(messages.fail_response);
+        info1.response.should.equal(messages.fail_response);
+
+        // Send an email that should succeed
+        transport.sendMail('Email', (err2, info2) => {
+          should(err2).equal(null);
+          info2.response.should.equal(messages.success_response);
+          done();
+        });
+      });
+    });
+
     it('should have a custom success message', (done) => {
       // This is the success message we want it to return
       const customSuccess = 'This is a custom success';
@@ -215,6 +236,25 @@ describe('Testing nodemailer-mock...', () => {
                       });
                 });
           });
+    });
+
+    it('should fail if shouldFailCheck returns true for message', (done) => {
+      // Tell the mock to fail once then succeed
+      // (for testing retries, or so you dont have to reset a test)
+      nodemailer.mock.setShouldFailCheck((email) => {
+        return email === 'FailMe';
+      });
+
+      // Send an email that should fail
+      transport.sendMail('FailMe')
+        .catch((err) => {
+          should(err).equal('nodemailer-mock failure');
+          transport.sendMail('Email')
+            .then((info) => {
+              info.response.should.equal(messages.success_response);
+              done();
+            });
+        });
     });
 
     it('should have a custom success message', (done) => {
@@ -339,6 +379,30 @@ describe('Testing nodemailer-mock...', () => {
       nodemailer.mock.setShouldFail(false);
       const info = await transport.sendMail('Email 3');
       info.response.should.equal(messages.success_response);
+    });
+
+    it('should fail if shouldFailCheck returns true for message', async () => {
+      // Tell the mock to fail once then succeed
+      // (for testing retries, or so you dont have to reset a test)
+      nodemailer.mock.setShouldFailCheck((email) => {
+        return email === 'FailMe';
+      });
+
+      // Send an email that should fail
+      try {
+        await transport.sendMail('FailMe');
+        throw new Error(); // this should not happen
+      } catch (err) {
+        should(err).equal('nodemailer-mock failure');
+      }
+
+      // This email should succeed
+      try {
+        const info = await transport.sendMail('Email');
+        info.response.should.equal(messages.success_response);
+      } catch (err) {
+        should(err).equal(null);
+      }
     });
 
     it('should have a custom success message', async () => {
