@@ -47,6 +47,7 @@ There are some special methods available on the mocked module to help with testi
   * set the Error that is returned in the callback for `transport.sendMail()`
 
 >_Note that the `.mock` methods in previous versions are aliased to the new names._
+
 >_Version 1.5+ returns an `Error` object on error rather than a string.
 
 # usage
