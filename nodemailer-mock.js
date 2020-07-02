@@ -8,36 +8,38 @@ const messages = require('./lib/messages');
 const NodemailerMock = (function NodemailerMock() {
   // the real nodemailer transport
   let transport = null;
-  let mockedVerify = true;
+  let _mockedVerify = true;
 
   // our response messages
-  let successResponse = messages.success_response;
-  let failResponse = messages.fail_response;
+  let _successResponse = messages.success_response;
+  let _failResponse = messages.fail_response;
 
-  // Sent mail cache
-  let sentMail = [];
-  const _userPlugins = {
+  // transport plugins
+  const _userPluginsDefault = {
     compile: [],
     stream: [],
   };
+  let _userPlugins = { ..._userPluginsDefault };
+  // Sent mail cache
+  let _sentMail = [];
 
   // Should the callback be a success or failure?
-  let shouldFail = false;
-  let shouldFailOnce = false;
-  let shouldFailCheck = null;
+  let _shouldFail = false;
+  let _shouldFailOnce = false;
+  let _shouldFailCheck = null;
 
   // Determine if the test should return success or failure
   const determineResponseSuccess = function determineResponseSuccess(email) {
     return new Promise((resolve, reject) => {
       // if shouldFailCheck defined use it
-      if (email && shouldFailCheck && shouldFailCheck(email)) {
+      if (email && _shouldFailCheck && _shouldFailCheck(email)) {
         return reject(new Error('nodemailer-mock fail response'));
       }
       // determine if we want to return an error
-      if (shouldFail) {
+      if (_shouldFail) {
         // if this is a one time failure, reset the status
-        if (shouldFailOnce) {
-          shouldFail = shouldFailOnce = false;
+        if (_shouldFailOnce) {
+          _shouldFail = _shouldFailOnce = false;
         }
         return reject(new Error('nodemailer-mock fail response'));
       }
@@ -65,9 +67,9 @@ const NodemailerMock = (function NodemailerMock() {
             .then(() => {
               // Resolve/Success
               // add the email to our cache
-              sentMail.push(email);
+              _sentMail.push(email);
               // update the response
-              info.response = successResponse;
+              info.response = _successResponse;
               // indicate that we are sending success
               debug('transport.sendMail', 'SUCCESS', info);
               // return success
@@ -79,37 +81,37 @@ const NodemailerMock = (function NodemailerMock() {
             .catch(() => {
               // Reject/Failure
               // update the response
-              info.response = failResponse;
+              info.response = _failResponse;
               // indicate that we are sending an error
-              debug('transport.sendMail', 'FAIL', failResponse, info);
+              debug('transport.sendMail', 'FAIL', _failResponse, info);
               // return the error
               if (isPromise) {
-                return Promise.reject(failResponse);
+                return Promise.reject(_failResponse);
               }
-              return callback(failResponse, info);
+              return callback(_failResponse, info);
             });
       },
 
       verify: (callback) => {
         // should we mock the verify request?
-        if (mockedVerify) {
+        if (_mockedVerify) {
           // support either callback or promise api
           const isPromise = !callback && typeof Promise === 'function';
 
           return determineResponseSuccess()
-              .then(() => isPromise ? Promise.resolve(successResponse) : callback(null, successResponse))
-              .catch(() => isPromise ? Promise.reject(failResponse) : callback(failResponse));
+              .then(() => isPromise ? Promise.resolve(_successResponse) : callback(null, _successResponse))
+              .catch(() => isPromise ? Promise.reject(_failResponse) : callback(_failResponse));
         }
         // use the real nodemailer transport to verify
         return transport.verify(callback);
       },
 
       use: (step, plugin) => {
-        step = (step || '').toString();
-        if (!Object.prototype.hasOwnProperty.call(_userPlugins, step)) {
-          _userPlugins[step] = [plugin];
+        const stepId = (step || '').toString();
+        if (!Object.prototype.hasOwnProperty.call(_userPlugins, stepId)) {
+          _userPlugins[stepId] = [plugin];
         } else {
-          _userPlugins[step].push(plugin);
+          _userPlugins[stepId].push(plugin);
         }
 
         return;
@@ -117,6 +119,12 @@ const NodemailerMock = (function NodemailerMock() {
       // the options this transport was created with
       mock: {
         options,
+
+        /**
+         * get a dictionary of plugins used by this transport
+         * @return {Object} plugins keyed by the step id
+         */
+        getPlugins: () => _userPlugins,
       },
     };
   };
@@ -127,7 +135,7 @@ const NodemailerMock = (function NodemailerMock() {
      * determine if sendMail() should return errors once then succeed
      */
     setShouldFailOnce: () => {
-      shouldFail = shouldFailOnce = true;
+      _shouldFail = _shouldFailOnce = true;
     },
 
     /**
@@ -135,7 +143,7 @@ const NodemailerMock = (function NodemailerMock() {
      * @param  {boolean} isFail true will return errors, false will return successes
      */
     setShouldFail: (isFail) => {
-      shouldFail = isFail;
+      _shouldFail = isFail;
     },
 
     /**
@@ -143,7 +151,7 @@ const NodemailerMock = (function NodemailerMock() {
      * @param  {boolean} isMocked if the function should be mocked
      */
     setMockedVerify: (isMocked) => {
-      mockedVerify = isMocked;
+      _mockedVerify = isMocked;
     },
 
     /**
@@ -151,7 +159,7 @@ const NodemailerMock = (function NodemailerMock() {
      * @param  {Mixed} response
      */
     setSuccessResponse: (response) => {
-      successResponse = response;
+      _successResponse = response;
     },
 
     /**
@@ -159,7 +167,7 @@ const NodemailerMock = (function NodemailerMock() {
      * @param  {Error} error
      */
     setFailResponse: (error) => {
-      failResponse = error;
+      _failResponse = error;
     },
 
     /**
@@ -167,25 +175,26 @@ const NodemailerMock = (function NodemailerMock() {
      * @param  {function} check
      * * */
     setShouldFailCheck: (check) => {
-      shouldFailCheck = check;
+      _shouldFailCheck = check;
     },
 
     /**
      * get an array of sent emails
      * @return {Object[]} an array of emails
      */
-    getSentMail: () => sentMail,
+    getSentMail: () => _sentMail,
 
     /**
      * reset mock values to defaults
      */
     reset: () => {
-      sentMail = [];
-      shouldFail = shouldFailOnce = false;
-      successResponse = messages.success_response;
-      failResponse = messages.fail_response;
-      mockedVerify = true;
-      shouldFailCheck = null;
+      _userPlugins = { ..._userPluginsDefault };
+      _sentMail = [];
+      _shouldFail = _shouldFailOnce = false;
+      _successResponse = messages.success_response;
+      _failResponse = messages.fail_response;
+      _mockedVerify = true;
+      _shouldFailCheck = null;
     },
   };
 

@@ -15,15 +15,35 @@ describe('Testing nodemailer-mock...', () => {
     nodemailer.mock.reset();
   });
 
-  describe('nodestyle callback api', () => {
-    it('should allow plugins to be added', (done) => {
+  describe('nodemailer functionality', () => {
+    it('should allow plugins to be added', async () => {
       // try to add a plugin, twice for coverage;
-      transport.use('plugin-name', {});
-      transport.use('plugin-name', {});
+      transport.use('plugin-name', { foo: 'bar' });
+      let { 'plugin-name': plugins } = transport.mock.getPlugins();
+      let [ plugin ] = plugins;
+      should(plugin).not.equal(undefined);
+      plugin.should.have.property('foo');
+      plugin.foo.should.equal('bar');
+
+      transport.use('plugin-name', { foo: 'rab' });
+      plugins = transport.mock.getPlugins()['plugin-name'];
+      [ , plugin ] = plugins;
+      plugin.foo.should.equal('rab');
+
       // allow for falsey step arg
-      transport.use(false, {});
-      done();
+      transport.use(false, { foo: 'false' });
+      plugins = transport.mock.getPlugins()[''];
+      [ plugin ] = plugins;
+      plugin.foo.should.equal('false');
+
+      // make sure they get cleared
+      nodemailer.mock.reset();
+      plugins = transport.mock.getPlugins()[''];
+      should(plugins).equal(undefined);
     });
+  })
+
+  describe('nodestyle callback api', () => {
 
     it('should succeed for email sending', (done) => {
       // Send an email that should succeed
