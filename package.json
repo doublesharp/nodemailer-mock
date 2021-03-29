@@ -1,7 +1,7 @@
 {
   "name": "nodemailer-mock",
   "version": "1.5.4",
-  "description": "Mock nodemailer module for testing",
+  "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "main": "nodemailer-mock.js",
   "directories": {
     "lib": "./lib",
