@@ -4,10 +4,11 @@ rm -rf ./coverage
 mkdir -p coverage
 
 NODE_ENV=test \
-XUNIT_FILE=./coverage/xunit.xml \
+  XUNIT_FILE=./coverage/xunit.xml \
   ./node_modules/.bin/nyc \
   --reporter=lcov \
   --reporter=cobertura \
+  --reporter=text \
   ./node_modules/.bin/_mocha \
   -- \
   --reporter=spec-xunit-file \
