@@ -7,7 +7,7 @@
 [![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)](https://david-dm.org/doublesharp/nodemailer-mock?type=dev)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
-Mocked nodemailer module for unit testing.
+Easy as pie nodemailer mock for unit testing your Node.js applications.
 
 # install
 
