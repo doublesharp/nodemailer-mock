@@ -1,0 +1,77 @@
+name: CI - tests and coverage 
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '!*' # Do not execute on tags
+    paths:
+      - '*.js'
+      - '*.json'
+      - 'test/*'
+      - 'lib/*'
+  pull_request:
+    paths:
+      - '!*.MD'
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: [ ubuntu-latest ]
+        node: [ '15', '12', '10' ]
+    name: test/node ${{ matrix.node }}/${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-node@master
+      with:
+        node-version: ${{ matrix.node }}
+    - run: npm ci
+    - run: npm run test
+  coverage:
+    needs: [ test ]
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-node@master
+      with:
+        node-version: '15'
+    - run: npm ci
+    - uses: paambaati/codeclimate-action@v2.7.5
+      env:
+        CC_TEST_REPORTER_ID: a0ad27e81a65b0c563b67c884e31a19aa17775e3c95dff69bfce66e0858c04f2
+      with:
+        coverageCommand: npm run coverage-report
+  badge:
+    needs: [ test ]
+    name: badge
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-node@master
+      with:
+        node-version: '15'
+
+    - run: npm ci
+    - run: |
+        COVERAGE_ALL="$(npm run coverage-report | grep "All files" | cut -f 5 -d'|' | xargs)%"
+        echo "All file Coverage $COVERAGE_ALL"
+        echo "COVERAGE=$(echo ${COVERAGE_ALL})" >> $GITHUB_ENV
+
+        REF=${{ github.ref }}
+        echo "github.ref: $REF"
+        IFS='/' read -ra PATHS <<< "$REF"
+        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
+        echo $BRANCH_NAME
+        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
+    - uses: schneegans/dynamic-badges-action@v1.0.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: bc53be57c56fa0c0fc80a29164cc22fc
+        filename: nodemailer-mock__${{ env.BRANCH }}.json
+        label: Test Coverage
+        message: ${{ env.COVERAGE }}
+        color: green
+        namedLogo: nyc
+  
