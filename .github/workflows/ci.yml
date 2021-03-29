@@ -40,7 +40,7 @@ jobs:
     - run: npm ci
     - uses: paambaati/codeclimate-action@v2.7.5
       env:
-        CC_TEST_REPORTER_ID: a0ad27e81a65b0c563b67c884e31a19aa17775e3c95dff69bfce66e0858c04f2
+        CC_TEST_REPORTER_ID: 3165df590ae38f1c5a1fdb4ca6e9f2f2f88d01d4f88148fb10d8383b502409ee
       with:
         coverageCommand: npm run coverage-report
   badge:
