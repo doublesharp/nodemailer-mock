@@ -120,7 +120,7 @@ try {
 ```
 # example tests using mocked module
 
-To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest) and [`jest`](https://www.npmjs.com/package/mocha) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. You will need to `npm i -D jest` and/or `npm i -D mockery` to run the examples, and with a shortcut of `npm run examples:jest` and `npm run examples:mocha`.
+To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest) and [`jest`](https://www.npmjs.com/package/mocha) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. You will need to `npm i -D jest` and/or `npm i -D mockery` to run the examples, and with a shortcut of `npm run example:jest` and `npm run example:mocha`.
 
 ## example using jest
 
