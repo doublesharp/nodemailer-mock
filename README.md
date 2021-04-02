@@ -41,6 +41,7 @@ There are some special methods available on the mocked module to help with testi
   * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
     * if `true`, use a mocked callback
     * if `false`, pass through to a real `nodemailer` transport
+  * *Note that this will not work with `jest` as all `nodemailer` instances are mocked*
 * `nodemailerMock.mock.setSuccessResponse({Mixed} success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
 * `nodemailerMock.mock.setFailResponse({Error} err)`
@@ -54,7 +55,7 @@ There are some special methods available on the mocked module to help with testi
 The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
 
 **setup test**
-```
+```javascript
 const nodemailerMock = require('nodemailer-mock');
 const transport = nodemailerMock.createTransport();
 
@@ -63,7 +64,7 @@ const email = ... // <-- your email here
 ```
 
 **use nodestyle callbacks**
-```
+```javascript
 // send with nodestyle callback
 transport.sendMail(email, function(err, info) {
   if (err) {
@@ -82,7 +83,7 @@ transport.verify(function(err, success) {
 ```
 
 **use promises**
-```
+```javascript
 // send with promises
 transport.sendMail(email)
   .then(function(info) {
@@ -103,7 +104,7 @@ transport.verify()
 ```
 
 **use async/await**
-```
+```javascript
 // send an email with async / wait
 try {
   const info = await transport.sendMail(email);
@@ -118,11 +119,39 @@ try {
   console.log('Error!', err);
 }
 ```
+# example tests using mocked module
 
-# example using mocha and mockery
+To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using `jest` and `mocha` in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. You will need to `npm i -D jest` and/or `npm i -D mockery` to run the examples, and with a shortcut of `npm run examples:jest` and `npm run examples:mocha`.
+
+## example using jest
+
+To mock `nodemailer` using `jest` create a file called `./\__mocks\__/nodemailer.js` that exports the mocked module:
+
+```javascript
+module.exports = require('nodemailer-mock');
+```
+
+Once the mock file is created all calls to `nodemailer` from your tests will return the mocked module. To access to mock functions, just load it in you test file.
+
+```javascript
+const { mock } = require('nodemailer');
+
+test('Send an email using the mocked nodemailer', async () => {
+  /* ... run your tests that send emails here */
+
+  // check the mock for our sent emails
+  const sentEmails = mock.getSentMail();
+  // there should be one
+  expect(sentEmails.length).toBe(1);
+  // and it should match the to address
+  expect(sentEmails[0].to).toBe('justin@to.com');
+});
+```
+
+## example using mocha and mockery
 Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
 
-```
+```javascript
 const should = require('should');
 const mockery = require('mockery');
 const nodemailerMock = require('nodemailer-mock');
@@ -194,6 +223,7 @@ describe('Tests that send email',  async () {
     response.error.should.be.exactly(err);
   });
   
+  /* this will not work with jest as all nodemailers are mocked */
   it('should verify using the real nodemailer transport', async () {
     // tell the mock class to pass verify requests to nodemailer
     nodemailerMock.mock.setMockedVerify(false);
