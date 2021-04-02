@@ -6,7 +6,7 @@
 [![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)](https://david-dm.org/doublesharp/nodemailer-mock?type=dev)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
-Easy as pie nodemailer mock for unit testing your Node.js applications.
+Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
 
 # install
 
@@ -20,7 +20,7 @@ yarn add -D nodemailer-mock
 
 # mock api
 
-Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked `nodemailer`.
+Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked [`nodemailer`](https://www.npmjs.com/package/nodemailer).
 
 * `nodemailerMock.mock.reset()`
   * resets the mock class to default values
@@ -120,7 +120,7 @@ try {
 ```
 # example tests using mocked module
 
-To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using `jest` and `mocha` in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. You will need to `npm i -D jest` and/or `npm i -D mockery` to run the examples, and with a shortcut of `npm run examples:jest` and `npm run examples:mocha`.
+To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest) and [`jest`](https://www.npmjs.com/package/mocha) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. You will need to `npm i -D jest` and/or `npm i -D mockery` to run the examples, and with a shortcut of `npm run examples:jest` and `npm run examples:mocha`.
 
 ## example using jest
 
@@ -156,7 +156,7 @@ test('Send an email using the mocked nodemailer', async () => {
 ```
 
 ## example using mocha and mockery
-Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
+Here is an example of using a mocked `nodemailer` class in a [`mocha`](https://www.npmjs.com/package/mocha) test using [`mockery`](https://www.npmjs.com/package/mockery). Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
 
 ```javascript
 /** 
