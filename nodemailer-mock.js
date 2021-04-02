@@ -1,11 +1,9 @@
 'use strict';
 
 const debug = require('debug')('nodemailer-mock');
-const nodemailer = require('nodemailer');
+const realmailer = require('nodemailer');
 const messages = require('./lib/messages');
-
-// this mocks the functionality of nodemailer
-const NodemailerMock = (function NodemailerMock() {
+function NodemailerMock(nodemailer) {
   // the real nodemailer transport
   let transport = null;
   let _mockedVerify = true;
@@ -225,7 +223,14 @@ const NodemailerMock = (function NodemailerMock() {
     createTransport,
     // Test helper methods
     mock,
+    // Will the real nodemailer please stand up
+    nodemailer,
   };
-})();
+}
 
-module.exports = NodemailerMock;
+// this mocks the functionality of nodemailer
+module.exports = NodemailerMock(realmailer);
+
+// use this to pass in a real nodemailer instance
+module.exports.getMockFor = (nodemailer = realmailer) =>
+  NodemailerMock(nodemailer);

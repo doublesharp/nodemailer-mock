@@ -2,9 +2,10 @@
 
 const should = require('should');
 const messages = require('../lib/messages');
-const nodemailer = require('../');
+const nodemailer = require('nodemailer');
+const mocked = require('../');
 
-const transport = nodemailer.createTransport({
+const transport = mocked.createTransport({
   host: '127.0.0.1',
   port: -100,
 });
@@ -12,7 +13,26 @@ const transport = nodemailer.createTransport({
 describe('Testing nodemailer-mock...', () => {
   beforeEach(() => {
     // Reset the mock to default values after each test
-    nodemailer.mock.reset();
+    mocked.mock.reset();
+  });
+
+  describe('module loading', () => {
+    it('should let you create a mock using the real nodemailer using getMockFor(nodemailer)', async () => {
+      // it's the real one...
+      nodemailer.should.not.have.property('mock');
+      // load the mock using the real one
+      const testMock = require('../').getMockFor(nodemailer);
+      should(typeof testMock).not.equal('undefined');
+      // it's the mock one...
+      testMock.should.have.property('mock');
+    });
+
+    it('should let you create a mock using getMockFor but with defaults', async () => {
+      const testMock = require('../').getMockFor();
+      should(typeof testMock).not.equal('undefined');
+      // it's the mock one...
+      testMock.should.have.property('mock');
+    });
   });
 
   describe('nodemailer functionality', () => {
@@ -20,31 +40,30 @@ describe('Testing nodemailer-mock...', () => {
       // try to add a plugin, twice for coverage;
       transport.use('plugin-name', { foo: 'bar' });
       let { 'plugin-name': plugins } = transport.mock.getPlugins();
-      let [ plugin ] = plugins;
+      let [plugin] = plugins;
       should(plugin).not.equal(undefined);
       plugin.should.have.property('foo');
       plugin.foo.should.equal('bar');
 
       transport.use('plugin-name', { foo: 'rab' });
       plugins = transport.mock.getPlugins()['plugin-name'];
-      [ , plugin ] = plugins;
+      [, plugin] = plugins;
       plugin.foo.should.equal('rab');
 
       // allow for falsey step arg
       transport.use(false, { foo: 'false' });
       plugins = transport.mock.getPlugins()[''];
-      [ plugin ] = plugins;
+      [plugin] = plugins;
       plugin.foo.should.equal('false');
 
       // make sure they get cleared
-      nodemailer.mock.reset();
+      mocked.mock.reset();
       plugins = transport.mock.getPlugins()[''];
       should(plugins).equal(undefined);
     });
-  })
+  });
 
   describe('nodestyle callback api', () => {
-
     it('should succeed for email sending', (done) => {
       // Send an email that should succeed
       transport.sendMail('Email', (err, info) => {
@@ -62,7 +81,7 @@ describe('Testing nodemailer-mock...', () => {
         should(err).equal(null);
         info.response.should.equal(messages.success_response);
         // Check that our email was put into the sentMail cache
-        const sentMail = nodemailer.mock.getSentMail();
+        const sentMail = mocked.mock.getSentMail();
         should(sentMail).not.be.empty();
         sentMail.length.should.equal(1);
         sentMail[0].should.equal(email);
@@ -73,7 +92,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should fail once then succeed for email sending', (done) => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
       transport.sendMail('Email', (err1, info1) => {
@@ -91,7 +110,7 @@ describe('Testing nodemailer-mock...', () => {
 
     it('should fail more than once if not reset', (done) => {
       // tell the mock to fail when sending until we tell it to succeed
-      nodemailer.mock.setShouldFail(true);
+      mocked.mock.setShouldFail(true);
 
       // Send an email that should fail
       transport.sendMail('Email 1', (err1, info1) => {
@@ -104,7 +123,7 @@ describe('Testing nodemailer-mock...', () => {
           info2.response.should.equal(messages.fail_response);
 
           // tell the mock to succeed when sending
-          nodemailer.mock.setShouldFail(false);
+          mocked.mock.setShouldFail(false);
 
           // Send an email that should succeed
           transport.sendMail('Email 3', (err3, info3) => {
@@ -119,7 +138,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should fail if shouldFailCheck returns true for message', (done) => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailCheck((email) => {
+      mocked.mock.setShouldFailCheck((email) => {
         return email === 'FailMe';
       });
 
@@ -140,7 +159,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should have a custom success message', (done) => {
       // This is the success message we want it to return
       const customSuccess = 'This is a custom success';
-      nodemailer.mock.setSuccessResponse(customSuccess);
+      mocked.mock.setSuccessResponse(customSuccess);
 
       // Send an email that should succeed
       transport.sendMail('Email', (err, info) => {
@@ -153,11 +172,11 @@ describe('Testing nodemailer-mock...', () => {
     it('should have a custom error message', (done) => {
       // This is the error message we want it to return
       const customError = 'This is a custom error';
-      nodemailer.mock.setFailResponse(customError);
+      mocked.mock.setFailResponse(customError);
 
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
       transport.sendMail('Email', (err, info) => {
@@ -176,7 +195,7 @@ describe('Testing nodemailer-mock...', () => {
     });
 
     it('should return verify failure using the mocked nodemailer transport', (done) => {
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
       transport.verify((err) => {
         should(err).not.equal(null);
         err.should.be.exactly(messages.fail_response);
@@ -185,7 +204,7 @@ describe('Testing nodemailer-mock...', () => {
     });
 
     it('should return verify error using the real nodemailer transport', (done) => {
-      nodemailer.mock.setMockedVerify(false);
+      mocked.mock.setMockedVerify(false);
       transport.verify((err) => {
         should(err).not.equal(null);
         err.code.should.equal('ECONNECTION');
@@ -197,143 +216,129 @@ describe('Testing nodemailer-mock...', () => {
 
   describe('promise api', () => {
     it('should succeed for email sending', (done) => {
-      transport.sendMail('Email')
-          .then((info) => {
-            info.response.should.equal(messages.success_response);
-            done();
-          });
+      transport.sendMail('Email').then((info) => {
+        info.response.should.equal(messages.success_response);
+        done();
+      });
     });
 
     it('should have the sent email available in the mock.getSentMail()', (done) => {
       // Look for this value in the sentmail cache
       const email = 'Check for this value';
       // Send an email that should succeed
-      transport.sendMail(email)
-          .then((info) => {
-            info.response.should.equal(messages.success_response);
-            // Check that our email was put into the sentMail cache
-            const sentMail = nodemailer.mock.getSentMail();
-            should(sentMail).not.be.empty();
-            sentMail.length.should.equal(1);
-            sentMail[0].should.equal(email);
-            done();
-          });
+      transport.sendMail(email).then((info) => {
+        info.response.should.equal(messages.success_response);
+        // Check that our email was put into the sentMail cache
+        const sentMail = mocked.mock.getSentMail();
+        should(sentMail).not.be.empty();
+        sentMail.length.should.equal(1);
+        sentMail[0].should.equal(email);
+        done();
+      });
     });
 
     it('should fail once then succeed for email sending', (done) => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
-      transport.sendMail('Email')
-          .catch((err) => {
-            should(err.message).equal('nodemailer-mock failure');
-            transport.sendMail('Email')
-                .then((info) => {
-                  info.response.should.equal(messages.success_response);
-                  done();
-                });
-          });
+      transport.sendMail('Email').catch((err) => {
+        should(err.message).equal('nodemailer-mock failure');
+        transport.sendMail('Email').then((info) => {
+          info.response.should.equal(messages.success_response);
+          done();
+        });
+      });
     });
 
     it('should fail more than once if not reset', (done) => {
       // tell the mock to fail when sending until we tell it to succeed
-      nodemailer.mock.setShouldFail(true);
+      mocked.mock.setShouldFail(true);
 
       // Send an email that should fail
-      transport.sendMail('Email 1')
-          .catch((err1) => {
-            should(err1.message).equal('nodemailer-mock failure');
-            transport.sendMail('Email 2')
-                .catch((err2) => {
-                  should(err2.message).equal('nodemailer-mock failure');
-                  nodemailer.mock.setShouldFail(false);
-                  transport.sendMail('Email 3')
-                      .then((info) => {
-                        info.response.should.equal(messages.success_response);
-                        done();
-                      });
-                });
+      transport.sendMail('Email 1').catch((err1) => {
+        should(err1.message).equal('nodemailer-mock failure');
+        transport.sendMail('Email 2').catch((err2) => {
+          should(err2.message).equal('nodemailer-mock failure');
+          mocked.mock.setShouldFail(false);
+          transport.sendMail('Email 3').then((info) => {
+            info.response.should.equal(messages.success_response);
+            done();
           });
+        });
+      });
     });
 
     it('should fail if shouldFailCheck returns true for message', (done) => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailCheck((email) => {
+      mocked.mock.setShouldFailCheck((email) => {
         return email === 'FailMe';
       });
 
       // Send an email that should fail
-      transport.sendMail('FailMe')
-        .catch((err) => {
-          should(err.message).equal('nodemailer-mock failure');
-          transport.sendMail('Email')
-            .then((info) => {
-              info.response.should.equal(messages.success_response);
-              done();
-            });
+      transport.sendMail('FailMe').catch((err) => {
+        should(err.message).equal('nodemailer-mock failure');
+        transport.sendMail('Email').then((info) => {
+          info.response.should.equal(messages.success_response);
+          done();
         });
+      });
     });
 
     it('should have a custom success message', (done) => {
       // This is the success message we want it to return
       const customSuccess = 'This is a custom success';
-      nodemailer.mock.setSuccessResponse(customSuccess);
+      mocked.mock.setSuccessResponse(customSuccess);
 
       // Send an email that should succeed
-      transport.sendMail('Email')
-          .then((info) => {
-            info.response.should.equal(customSuccess);
-            done();
-          });
+      transport.sendMail('Email').then((info) => {
+        info.response.should.equal(customSuccess);
+        done();
+      });
     });
 
     it('should have a custom error message', (done) => {
       // This is the error message we want it to return
       const customError = 'This is a custom error';
-      nodemailer.mock.setFailResponse(customError);
+      mocked.mock.setFailResponse(customError);
 
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
-      transport.sendMail('Email')
-          .catch((err) => {
-            err.should.equal(customError);
-            done();
-          });
+      transport.sendMail('Email').catch((err) => {
+        err.should.equal(customError);
+        done();
+      });
     });
 
     it('should return verify success using the mocked nodemailer transport', (done) => {
-      transport.verify()
-          .then((success) => {
-            success.should.equal(messages.success_response);
-            done();
-          });
+      transport.verify().then((success) => {
+        success.should.equal(messages.success_response);
+        done();
+      });
     });
 
     it('should return verify failure using the mocked nodemailer transport', (done) => {
-      nodemailer.mock.setShouldFailOnce();
-      transport.verify()
-          .catch((err) => {
-            should(err).not.equal(null);
-            err.should.be.exactly(messages.fail_response);
-            done();
-          });
+      mocked.mock.setShouldFailOnce();
+      transport.verify().catch((err) => {
+        should(err).not.equal(null);
+        err.should.be.exactly(messages.fail_response);
+        done();
+      });
     });
 
     it('should return verify error using the real nodemailer transport', (done) => {
-      nodemailer.mock.setMockedVerify(false);
-      transport.verify()
-          .catch((err) => {
-            should(err).not.equal(null);
-            err.code.should.equal('ECONNECTION');
-            err.command.should.equal('CONN');
-            done();
-          });
+      mocked.mock.setMockedVerify(false);
+      transport.verify().catch((err) => {
+        should(err).not.equal(null);
+        err.code.should.equal('ECONNECTION');
+        err.command.should.equal('CONN');
+        done();
+      });
     });
   });
 
@@ -350,7 +355,7 @@ describe('Testing nodemailer-mock...', () => {
       const info = await transport.sendMail(email);
       info.response.should.equal(messages.success_response);
       // Check that our email was put into the sentMail cache
-      const sentMail = nodemailer.mock.getSentMail();
+      const sentMail = mocked.mock.getSentMail();
       should(sentMail).not.be.empty();
       sentMail.length.should.equal(1);
       sentMail[0].should.equal(email);
@@ -359,7 +364,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should fail once then succeed for email sending', async () => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
       try {
@@ -380,7 +385,7 @@ describe('Testing nodemailer-mock...', () => {
 
     it('should fail more than once if not reset', async () => {
       // tell the mock to fail when sending until we tell it to succeed
-      nodemailer.mock.setShouldFail(true);
+      mocked.mock.setShouldFail(true);
 
       // Send an email that should fail
       try {
@@ -396,7 +401,7 @@ describe('Testing nodemailer-mock...', () => {
         should(err.message).equal('nodemailer-mock failure');
       }
 
-      nodemailer.mock.setShouldFail(false);
+      mocked.mock.setShouldFail(false);
       const info = await transport.sendMail('Email 3');
       info.response.should.equal(messages.success_response);
     });
@@ -404,7 +409,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should fail if shouldFailCheck returns true for message', async () => {
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailCheck((email) => {
+      mocked.mock.setShouldFailCheck((email) => {
         return email === 'FailMe';
       });
 
@@ -428,7 +433,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should have a custom success message', async () => {
       // This is the success message we want it to return
       const customSuccess = 'This is a custom success';
-      nodemailer.mock.setSuccessResponse(customSuccess);
+      mocked.mock.setSuccessResponse(customSuccess);
 
       // Send an email that should succeed
       const info = await transport.sendMail('Email');
@@ -438,11 +443,11 @@ describe('Testing nodemailer-mock...', () => {
     it('should have a custom error message', async () => {
       // This is the error message we want it to return
       const customError = 'This is a custom error';
-      nodemailer.mock.setFailResponse(customError);
+      mocked.mock.setFailResponse(customError);
 
       // Tell the mock to fail once then succeed
       // (for testing retries, or so you dont have to reset a test)
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
 
       // Send an email that should fail
       try {
@@ -459,7 +464,7 @@ describe('Testing nodemailer-mock...', () => {
     });
 
     it('should return verify failure using the mocked nodemailer transport', async () => {
-      nodemailer.mock.setShouldFailOnce();
+      mocked.mock.setShouldFailOnce();
       try {
         await transport.verify();
         throw new Error(); // this should not happen
@@ -470,7 +475,7 @@ describe('Testing nodemailer-mock...', () => {
     });
 
     it('should return verify error using the real nodemailer transport', async () => {
-      nodemailer.mock.setMockedVerify(false);
+      mocked.mock.setMockedVerify(false);
       try {
         await transport.verify();
         throw new Error(); // this should not happen
