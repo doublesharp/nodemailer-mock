@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -32,7 +32,11 @@
     "unit test",
     "test",
     "mock",
-    "stub"
+    "stub",
+    "coverage",
+    "ci",
+    "mocha",
+    "jest"
   ],
   "author": "Justin Silver",
   "license": "MIT",
