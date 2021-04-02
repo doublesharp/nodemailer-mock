@@ -127,16 +127,19 @@ To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with i
 
 To mock `nodemailer` using `jest` create a file called `./__mocks__/nodemailer.js` that exports the mocked module:
 
-
-***`./__mocks__/nodemailer.js`***
 ```javascript
+/** 
+ * ./__mocks__/nodemailer.js 
+ **/
 module.exports = require('nodemailer-mock');
 ```
 
 Once the mock file is created all calls to `nodemailer` from your tests will return the mocked module. To access to mock functions, just load it in your test file. *Note that `transport.verify()` passthrough is not available as the module is mocked before `nodemailer-mock` is loaded so it can't be accessed.*
 
-***`./__tests__/my-test.js`***
 ```javascript
+/** 
+ * ./__tests__/my-test.js 
+ **/
 const { mock } = require('nodemailer');
 
 test('Send an email using the mocked nodemailer', async () => {
