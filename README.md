@@ -158,6 +158,9 @@ test('Send an email using the mocked nodemailer', async () => {
 Here is an example of using a mocked `nodemailer` class in a `mocha` test using `mockery`. Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
 
 ```javascript
+/** 
+ * ./test/my-test.js 
+ **/
 const should = require('should');
 const mockery = require('mockery');
 const nodemailerMock = require('nodemailer-mock');
