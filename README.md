@@ -10,7 +10,6 @@ Easy as pie nodemailer mock for unit testing your Node.js applications.
 
 # install
 
-
 ```
 npm install nodemailer-mock --save-dev
 ```
@@ -20,7 +19,8 @@ yarn add -D nodemailer-mock
 ```
 
 # mock api
-There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked `nodemailer`.
+
+Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked `nodemailer`.
 
 * `nodemailerMock.mock.reset()`
   * resets the mock class to default values
