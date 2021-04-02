@@ -1,11 +1,8 @@
 {
-  plugins: [
-    'mocha'
-  ],
-  env: {
-    'mocha': true,
+  "env": {
+    "mocha": true
   },
-  rules: {
-    'global-require': 0,
+  "rules": {
+    "global-require": 0
   }
 }

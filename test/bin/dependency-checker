@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-'use strict'
+'use strict';
 const depcheck = require('depcheck');
 const path = require('path');
-const colors = require('colors');
+require('colors');
 
 const cwd = path.join(__dirname, '../..');
 
@@ -16,29 +16,33 @@ const checkmark = '\u2713';
 const xmark = '\u2717';
 const or = 'or'.white;
 
-function checkDeps(type, matches = [], actions, raw){
-  if (!matches || !matches.length){
+function checkDeps(type, matches = [], actions, raw) {
+  if (!matches || !matches.length) {
     console.log('    ', checkmark.green, `No ${type}.`.white);
   } else {
-    valid = false
+    valid = false;
     console.log('    ', xmark.red.bold, `Found ${type}!`.red);
-    if (actions){
+    if (actions) {
       const commands = actions.map((action) => {
-        return action += ' ' + matches.join(' ').bold;
-      })
+        return (action += ' ' + matches.join(' ').bold);
+      });
       console.log('       Corrective steps:'.white, '\n');
 
-      console.log('        ', commands.join(`\n\n       ${or}\n\n         `), '\n');
+      console.log(
+        '        ',
+        commands.join(`\n\n       ${or}\n\n         `),
+        '\n'
+      );
     } else {
       console.log('        Please correct this issue.'.white);
     }
-    if (raw && Object.keys(raw).length){
+    if (raw && Object.keys(raw).length) {
       console.log('       Module usage:'.white, '\n');
 
       matches.forEach((match) => {
         const files = raw[match].map((file) => file.replace(cwd, '.'));
         console.log('        ', match.bold);
-        console.log('         ', files.join('\n          '))
+        console.log('         ', files.join('\n          '));
       });
       console.log('');
     }
@@ -49,13 +53,30 @@ console.log('  Checking project dependencies...'.green);
 
 depcheck(cwd, options, (unused) => {
   checkDeps('unused dependencies', unused.dependencies, ['npm remove --save']);
-  checkDeps('unused dev dependencies', unused.devDependencies, ['npm remove --save-dev']);
-  checkDeps('missing dependencies', Object.keys(unused.missing), ['npm install --save', 'npm install --save-dev'], unused.missing);
-  checkDeps('invalid files', Object.keys(unused.invalidFiles), ['Provide access to'], unused.invalidFiles);
-  checkDeps('invalid directories', Object.keys(unused.invalidDirs), ['Provide access to'], unused.invalidDirs);
+  checkDeps('unused dev dependencies', unused.devDependencies, [
+    'npm remove --save-dev',
+  ]);
+  checkDeps(
+    'missing dependencies',
+    Object.keys(unused.missing),
+    ['npm install --save', 'npm install --save-dev'],
+    unused.missing
+  );
+  checkDeps(
+    'invalid files',
+    Object.keys(unused.invalidFiles),
+    ['Provide access to'],
+    unused.invalidFiles
+  );
+  checkDeps(
+    'invalid directories',
+    Object.keys(unused.invalidDirs),
+    ['Provide access to'],
+    unused.invalidDirs
+  );
 
   // exit with an error if anything isn't valid
   if (!valid) {
-    process.exit(1)
+    process.exit(1);
   }
 });

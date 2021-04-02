@@ -1,6 +1,6 @@
 {
   "parserOptions": {
-      "ecmaVersion": 2018
+    "ecmaVersion": 2020
   },
   "extends": "eslint:recommended",
   "env": {
@@ -8,12 +8,21 @@
     "node": true
   },
   "rules": {
-    "max-len": ["error", 120, 2, {
-      "ignoreStrings": true,
-      "ignoreTemplateLiterals": true
-    }],
-    "quotes": ["error", "single", {
-      "avoidEscape": true
-    }]
+    "max-len": [
+      "error",
+      120,
+      2,
+      {
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true
+      }
+    ],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ]
   }
 }
