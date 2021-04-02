@@ -8,17 +8,19 @@
     "test": "./test"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --exit",
+    "test": "mocha --exit",
     "coverage-report": "./test/bin/nyc-coverage-report",
     "coverage": "npm run coverage-report && open ./coverage/lcov-report/index.html",
-    "coverage-badge": "./node_modules/.bin/istanbul-cobertura-badger -e 95 -g 85 -b \"${PWD##*/}\"",
-    "lint": "./node_modules/.bin/eslint .",
+    "coverage-badge": "istanbul-cobertura-badger -e 95 -g 85 -b \"${PWD##*/}\"",
+    "lint": "eslint .",
     "validate": "./test/bin/module-validator",
     "depcheck": "./test/bin/dependency-checker",
-    "sloc": "./node_modules/.bin/sloc *.js lib test",
-    "sloc-app": "./node_modules/.bin/sloc *.js lib",
-    "sloc-test": "./node_modules/.bin/sloc test",
-    "inspect": "NODE_ENV=test ./node_modules/.bin/mocha -s 0 --inspect --debug-brk"
+    "sloc": "sloc *.js lib test",
+    "sloc-app": "sloc *.js lib",
+    "sloc-test": "sloc test",
+    "inspect": "NODE_ENV=test mocha -s 0 --inspect --debug-brk",
+    "example:jest": "jest examples",
+    "example:mocha": "mocha examples/test"
   },
   "repository": {
     "type": "git",
@@ -39,20 +41,23 @@
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
-    "colors": "1.4.0",
-    "depcheck": "1.4.0",
-    "eslint": "7.23.0",
-    "eslint-plugin-mocha": "8.1.0",
-    "istanbul-cobertura-badger": "1.3.1",
-    "mocha": "8.3.2",
-    "nyc": "15.1.0",
-    "should": "13.2.3",
-    "sloc": "0.2.1",
-    "spec-xunit-file": "0.0.1-3"
+    "colors": "^1.4.0",
+    "depcheck": "^1.4.0",
+    "eslint": "^7.23.0",
+    "istanbul-cobertura-badger": "^1.3.1",
+    "mocha": "^8.3.2",
+    "nyc": "^15.1.0",
+    "should": "^13.2.3",
+    "sloc": "^0.2.1",
+    "spec-xunit-file": "^0.0.1-3"
   },
   "dependencies": {
-    "debug": "4.3.1",
-    "nodemailer": "6.x"
+    "debug": "^4.3.1",
+    "nodemailer": "^6.x"
+  },
+  "optionalDependencies": {
+    "jest": "^26.6.3",
+    "mockery": "^2.1.0"
   },
   "pre-commit": [
     "lint",
