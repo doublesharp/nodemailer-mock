@@ -179,6 +179,7 @@ describe('Tests that send email',  async () {
     */
     /* Make sure anything that uses nodemailer is loaded here, 
     after it is mocked just above... */
+    const someModuleThatRequiresNodemailer = require('some-module-that-requires-nodemailer');
 
   });
   
