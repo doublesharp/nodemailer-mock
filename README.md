@@ -18,6 +18,10 @@ npm install nodemailer-mock --save-dev
 yarn add -D nodemailer-mock
 ```
 
+# module loading
+
+Depending on your mock configuration `nodemailer-mock` may, or may not, have access to `nodemailer` when it is loaded. For example, using `mockery` you can replace `nodemailer` with `require('nodemailer-mock')`, however in `jest` you will need to inject `nodemailer` using `module.exports = require('nodemailer-mock').getMockFor(require('nodemailer'));`
+
 # mock api
 
 Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked [`nodemailer`](https://www.npmjs.com/package/nodemailer).
@@ -40,7 +44,6 @@ Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`moc
   * determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`
     * if `true`, use a mocked callback
     * if `false`, pass through to a real `nodemailer` transport
-  * *Note that this will not work with `jest` as all `nodemailer` instances are mocked*
 * `nodemailerMock.mock.setSuccessResponse({Mixed} success)`
   * set the success message that is returned in the callback for `transport.sendMail()`
 * `nodemailerMock.mock.setFailResponse({Error} err)`
@@ -131,10 +134,12 @@ To mock `nodemailer` using `jest` create a file called `./__mocks__/nodemailer.j
  * Jest Mock
  * ./__mocks__/nodemailer.js 
  **/
-module.exports = require('nodemailer-mock');
+const nodemailer = require('nodemailer');
+const nodemailerMock = require('nodemailer-mock').getMockFor(nodemailer);
+module.exports = nodemailerMock;
 ```
 
-Once the mock file is created all calls to `nodemailer` from your tests will return the mocked module. To access to mock functions, just load it in your test file. *Note that `transport.verify()` passthrough is not available as the module is mocked before `nodemailer-mock` is loaded so it can't be accessed.*
+Once the mock file is created all calls to `nodemailer` from your tests will return the mocked module. To access to mock functions, just load it in your test file.
 
 ```javascript
 /** 
