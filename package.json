@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -59,7 +59,7 @@
     "debug": "^4.3.1",
     "nodemailer": "^6.x"
   },
-  "optionalDependencies": {
+  "optionalDevDependencies": {
     "jest": "^26.6.3",
     "mockery": "^2.1.0"
   },
