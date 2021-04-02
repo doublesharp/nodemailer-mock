@@ -129,6 +129,7 @@ To mock `nodemailer` using `jest` create a file called `./__mocks__/nodemailer.j
 
 ```javascript
 /** 
+ * Jest Mock
  * ./__mocks__/nodemailer.js 
  **/
 module.exports = require('nodemailer-mock');
@@ -138,6 +139,7 @@ Once the mock file is created all calls to `nodemailer` from your tests will ret
 
 ```javascript
 /** 
+ * Jest Test
  * ./__tests__/my-test.js 
  **/
 const { mock } = require('nodemailer');
@@ -159,6 +161,7 @@ Here is an example of using a mocked `nodemailer` class in a `mocha` test using 
 
 ```javascript
 /** 
+ * Mocha Test / Mockery Mock
  * ./test/my-test.js 
  **/
 const should = require('should');
