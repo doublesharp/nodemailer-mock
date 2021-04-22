@@ -3,6 +3,21 @@
 const debug = require('debug')('nodemailer-mock');
 const realmailer = require('nodemailer');
 const messages = require('./lib/messages');
+
+// alias old function names to new function names
+const setLegacyAliases = (mock) => {
+  // legacy aliases
+  Object.assign(mock, {
+    shouldFailOnce: mock.setShouldFailOnce,
+    shouldFail: mock.setShouldFail,
+    mockedVerify: mock.setMockedVerify,
+    successResponse: mock.setSuccessResponse,
+    failResponse: mock.setFailResponse,
+    sentMail: mock.getSentMail,
+    shouldFailCheck: mock.shouldFailCheck,
+  });
+};
+
 function NodemailerMock(nodemailer) {
   // the real nodemailer transport
   let transport = null;
@@ -143,50 +158,32 @@ function NodemailerMock(nodemailer) {
     /**
      * determine if sendMail() should return errors once then succeed
      */
-    setShouldFailOnce: () => {
-      _shouldFail = _shouldFailOnce = true;
-    },
-
+    setShouldFailOnce: () => (_shouldFail = _shouldFailOnce = true),
     /**
      * determine if sendMail() should return errors
      * @param  {boolean} isFail true will return errors, false will return successes
      */
-    setShouldFail: (isFail) => {
-      _shouldFail = isFail;
-    },
-
+    setShouldFail: (isFail) => (_shouldFail = isFail),
     /**
      * determine if transport.verify() should be mocked or not
      * @param  {boolean} isMocked if the function should be mocked
      */
-    setMockedVerify: (isMocked) => {
-      _mockedVerify = isMocked;
-    },
-
+    setMockedVerify: (isMocked) => (_mockedVerify = isMocked),
     /**
      * set the response messages for successes
      * @param  {Mixed} response
      */
-    setSuccessResponse: (response) => {
-      _successResponse = response;
-    },
-
+    setSuccessResponse: (response) => (_successResponse = response),
     /**
      * set the response messages for failures
      * @param  {Error} error
      */
-    setFailResponse: (error) => {
-      _failResponse = error;
-    },
-
+    setFailResponse: (error) => (_failResponse = error),
     /**
      * set the check function that returns true if a message send should fail
      * @param  {function} check
      * * */
-    setShouldFailCheck: (check) => {
-      _shouldFailCheck = check;
-    },
-
+    setShouldFailCheck: (check) => (_shouldFailCheck = check),
     /**
      * get an array of sent emails
      * @return {Object[]} an array of emails
@@ -207,16 +204,7 @@ function NodemailerMock(nodemailer) {
     },
   };
 
-  // legacy aliases
-  Object.assign(mock, {
-    shouldFailOnce: mock.setShouldFailOnce,
-    shouldFail: mock.setShouldFail,
-    mockedVerify: mock.setMockedVerify,
-    successResponse: mock.setSuccessResponse,
-    failResponse: mock.setFailResponse,
-    sentMail: mock.getSentMail,
-    shouldFailCheck: mock.shouldFailCheck,
-  });
+  setLegacyAliases(mock);
 
   return {
     // Our mocked transport
