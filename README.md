@@ -2,8 +2,6 @@
 
 [![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
 ![Code Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/doublesharp/bc53be57c56fa0c0fc80a29164cc22fc/raw/nodemailer-mock__heads_master.json)
-[![Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock.svg)](https://david-dm.org/doublesharp/nodemailer-mock)
-[![Dev Dependency Status](https://david-dm.org/doublesharp/nodemailer-mock/dev-status.svg)](https://david-dm.org/doublesharp/nodemailer-mock?type=dev)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
 Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
