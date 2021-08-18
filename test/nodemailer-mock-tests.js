@@ -61,6 +61,12 @@ describe('Testing nodemailer-mock...', () => {
       plugins = transport.mock.getPlugins()[''];
       should(plugins).equal(undefined);
     });
+
+    it('should emulate iddle status', () => {
+        should(transport.isIdle()).equal(false); 
+        mocked.mock.setShouldAreIdle(true);
+        should(transport.isIdle()).equal(true); 
+    });
   });
 
   describe('nodestyle callback api', () => {
