@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "main": "nodemailer-mock.js",
   "directories": {
@@ -46,17 +46,17 @@
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
   "devDependencies": {
     "colors": "^1.4.0",
-    "depcheck": "^1.4.2",
-    "eslint": "^7.32.0",
+    "depcheck": "^1.4.3",
+    "eslint": "^8.13.0",
     "istanbul-cobertura-badger": "^1.3.1",
-    "mocha": "^9.0.3",
+    "mocha": "^9.2.2",
     "nyc": "^15.1.0",
     "should": "^13.2.3",
-    "sloc": "^0.2.1",
+    "sloc": "^0.0.4",
     "spec-xunit-file": "^0.0.1-3"
   },
   "dependencies": {
-    "debug": "^4.3.2",
+    "debug": "^4.3.4",
     "nodemailer": "^6.x"
   },
   "optionalDevDependencies": {
