@@ -73,6 +73,19 @@ describe('Testing nodemailer-mock...', () => {
       });
     });
 
+    it('should succeed for email sending before and after close', (done) => {
+      transport.sendMail('Email', (err, info) => {
+        should(err).equal(null);
+        info.response.should.equal(messages.success_response);
+        transport.close();
+        transport.sendMail('Email2', (err, info) => {
+          should(err).equal(null);
+          info.response.should.equal(messages.success_response);
+          done();
+        });
+      });
+    });
+
     it('should have the sent email available in the mock.getSentMail()', (done) => {
       // Look for this value in the sentmail cache
       const email = 'Check for this value';
@@ -222,6 +235,17 @@ describe('Testing nodemailer-mock...', () => {
       });
     });
 
+    it('should succeed for email sending before and after close', (done) => {
+      transport.sendMail('Email').then((info) => {
+        info.response.should.equal(messages.success_response);
+        transport.close();
+        transport.sendMail('Email2').then((info) => {
+          info.response.should.equal(messages.success_response);
+          done();
+        });
+      });
+    });
+
     it('should have the sent email available in the mock.getSentMail()', (done) => {
       // Look for this value in the sentmail cache
       const email = 'Check for this value';
@@ -346,6 +370,16 @@ describe('Testing nodemailer-mock...', () => {
     it('should succeed for email sending', async () => {
       const info = await transport.sendMail('Email');
       info.response.should.equal(messages.success_response);
+    });
+
+    it('should succeed for email sending before and after close', async () => {
+      const info = await transport.sendMail('Email');
+      info.response.should.equal(messages.success_response);
+
+      transport.close();
+
+      const info2 = await transport.sendMail('Email2');
+      info2.response.should.equal(messages.success_response);
     });
 
     it('should have the sent email available in the mock.getSentMail()', async () => {
