@@ -130,6 +130,14 @@ function NodemailerMock(nodemailer) {
         return transport.verify(callback);
       },
 
+      close: () => {
+        debug('transport.close');
+        if (transport) {
+          transport.close();
+        }
+        return;
+      },
+
       use: (step, plugin) => {
         const stepId = (step || '').toString();
         if (!Object.prototype.hasOwnProperty.call(_userPlugins, stepId)) {
