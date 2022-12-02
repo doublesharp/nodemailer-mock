@@ -33,6 +33,8 @@ function NodemailerMock(nodemailer) {
     stream: [],
   };
   let _userPlugins = { ..._userPluginsDefault };
+  // transport.close call count
+  let _closeCallCount = 0;
   // Sent mail cache
   let _sentMail = [];
 
@@ -132,6 +134,7 @@ function NodemailerMock(nodemailer) {
 
       close: () => {
         debug('transport.close');
+        _closeCallCount++;
         if (transport) {
           transport.close();
         }
@@ -197,6 +200,11 @@ function NodemailerMock(nodemailer) {
      * @return {Object[]} an array of emails
      */
     getSentMail: () => _sentMail,
+    /**
+     * get the number of times the close() function has been called
+     * @returns {int} number of times close() has been called
+     */
+    getCloseCallCount: () => _closeCallCount,
 
     /**
      * reset mock values to defaults
@@ -204,6 +212,7 @@ function NodemailerMock(nodemailer) {
     reset: () => {
       _userPlugins = { ..._userPluginsDefault };
       _sentMail = [];
+      _closeCallCount = 0;
       _shouldFail = _shouldFailOnce = false;
       _successResponse = messages.success_response;
       _failResponse = messages.fail_response;

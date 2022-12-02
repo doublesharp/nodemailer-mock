@@ -66,7 +66,9 @@ describe('Testing nodemailer-mock...', () => {
       const info = await transport.sendMail('Email');
       info.response.should.equal(messages.success_response);
 
+      should(mocked.mock.getCloseCallCount()).equal(0);
       transport.close();
+      should(mocked.mock.getCloseCallCount()).equal(1);
 
       const info2 = await transport.sendMail('Email2');
       info2.response.should.equal(messages.success_response);
