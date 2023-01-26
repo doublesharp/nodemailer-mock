@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "main": "./dist/nodemailer-mock.js",
   "repository": {
