@@ -29,6 +29,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "tsc",
+    "install": "tsc",
     "test": "mocha -r ts-node/register",
     "coverage-report": "nyc npm run test",
     "coverage": "npm run coverage-report && open ./coverage/index.html",
