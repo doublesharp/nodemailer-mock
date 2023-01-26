@@ -76,7 +76,7 @@ Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`moc
 - `isUnmockedUsePlugins: () => boolean`
   - returns the status of `setUnmockedUsePlugins(?)`
 
-## `NodemailerMocktransporter.mock` functions
+## `NodemailerMockTransporter.mock` functions
 
 - `getPlugins: () => { [key: string]: Mail.PluginFunction<Mail.Options>[] }`
   - returns the plugins that have been added via `transporter.use()` as arrays, keyed by step
