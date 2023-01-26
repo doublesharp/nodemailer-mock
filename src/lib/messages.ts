@@ -1,13 +1,17 @@
-'use strict';
-const crypto = require('crypto');
+import { randomBytes } from 'crypto';
+import { SentMessageInfo } from 'nodemailer';
 
 const successResponse = 'nodemailer-mock success';
 
-module.exports = {
+export const messages: {
+  readonly success_response: string;
+  readonly fail_response: Error;
+  readonly info: () => SentMessageInfo;
+} = {
   success_response: successResponse,
   fail_response: new Error('nodemailer-mock failure'),
-  info: () => {
-    const messageId = crypto.randomBytes(24).toString('hex');
+  info: (): SentMessageInfo => {
+    const messageId = randomBytes(24).toString('hex');
     return {
       messageId,
       envelope: 'envelope',

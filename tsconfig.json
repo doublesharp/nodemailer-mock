@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node 18",
+
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020"],
+    "module": "UMD",
+    "moduleResolution": "node",
+
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "outDir": "dist",
+    "declaration": true
+  },
+
+  "include": ["src/**/*.ts"],
+
+  "compileOnSave": true,
+  "sourceType": "module"
+}

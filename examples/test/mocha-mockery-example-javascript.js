@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 'use strict';
 
 const mockery = require('mockery');
-const should = require('should');
-const nodemailerMock = require('../../nodemailer-mock');
-const { mock } = nodemailerMock;
+const { expect } = require('chai');
+const nodemailermock = require('../../dist/nodemailer-mock');
+const { mock } = nodemailermock;
 
-describe('Mocha + Mockery Test', function () {
+describe('Mocha + Mockery JavaScript', function () {
   // we need to mock nodemailer *before* we require() any modules that load it
   before(async () => {
     // Enable mockery to mock objects
@@ -15,11 +16,12 @@ describe('Mocha + Mockery Test', function () {
     });
 
     // mock here
-    mockery.registerMock('nodemailer', nodemailerMock);
+    mockery.registerMock('nodemailer', nodemailermock);
+    mock.reset();
   });
 
   // run a test
-  it('Send an email using the mocked nodemailer', async () => {
+  it('Send an email using the mocked nodemailer + javascript', async () => {
     // load the module to test, it will use the mocked nodemailer internally
     const mailer = require('../mailer-test');
     // send the email
@@ -27,8 +29,8 @@ describe('Mocha + Mockery Test', function () {
     // check the mock for our sent emails
     const sentEmails = mock.getSentMail();
     // there should be one
-    should(sentEmails.length).equal(1);
+    expect(sentEmails.length).to.equal(1);
     // and it should match the to address
-    should(sentEmails[0].to).equal('justin@to.com');
+    expect(sentEmails[0].to).to.equal('justin@to.com');
   });
 });
