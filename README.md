@@ -6,6 +6,8 @@
 
 Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
 
+From [SecretParty.io](https://www.secretparty.io) with ❤️.
+
 # install
 
 ```
