@@ -45,6 +45,6 @@ test
 .eslintignore
 .eslintrc
 .gitignore
-.mochaarc.json
+.mocharc.json
 nyc.config.js
 tsconfig.json
