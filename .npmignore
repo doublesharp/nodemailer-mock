@@ -41,10 +41,12 @@ jspm_packages
 
 .github
 src
+examples
 test
 .eslintignore
 .eslintrc
 .gitignore
 .mocharc.json
+jest.config.json
 nyc.config.js
 tsconfig.json
