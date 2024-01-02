@@ -2,7 +2,6 @@
   "name": "nodemailer-mock",
   "version": "2.0.4",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
-  "main": "./dist/nodemailer-mock.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/doublesharp/nodemailer-mock.git"
@@ -29,9 +28,16 @@
     "url": "https://github.com/doublesharp/nodemailer-mock/issues"
   },
   "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
+  "main": "./dist/nodemailer-mock.js",
+  "module": "./dist/nodemailer-mock.mjs",
+  "types": "./dist/nodemailer-mock.d.ts",
   "scripts": {
-    "build": "tsc",
-    "prepare": "tsc",
+    "clean": "shx rm -rf ./dist",
+    "build": "npm run build:tsc && npm run build:mjs",
+    "build:tsc": "tsc",
+    "build:mjs": "cp ./src/nodemailer-mock.mjs ./dist/nodemailer-mock.mjs",
+    "prepare": "npm run clean && npm run build",
+    "pretest": "npm run build",
     "test": "mocha -r ts-node/register",
     "coverage-report": "nyc npm run test",
     "coverage": "npm run coverage-report && open ./coverage/index.html",
@@ -68,6 +74,7 @@
     "mocha": "^10.2.0",
     "mockery": "^2.1.0",
     "nyc": "^15.1.0",
+    "shx": "^0.3.4",
     "spec-xunit-file": "^0.0.1-3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
