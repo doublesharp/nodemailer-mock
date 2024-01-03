@@ -31,6 +31,10 @@
   "main": "./dist/nodemailer-mock.js",
   "module": "./dist/nodemailer-mock.mjs",
   "types": "./dist/nodemailer-mock.d.ts",
+  "exports": {
+    ".": "./dist/nodemailer-mock.js",
+    "./lib/messages": "./dist/lib/messages.js"
+  },
   "scripts": {
     "clean": "shx rm -rf ./dist",
     "build": "npm run build:tsc && npm run build:mjs",
