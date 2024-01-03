@@ -35,7 +35,7 @@
     "clean": "shx rm -rf ./dist",
     "build": "npm run build:tsc && npm run build:mjs",
     "build:tsc": "tsc",
-    "build:mjs": "cp ./src/nodemailer-mock.mjs ./dist/nodemailer-mock.mjs",
+    "build:mjs": "cp ./mjs/nodemailer-mock.mjs ./dist/nodemailer-mock.mjs",
     "prepare": "npm run clean && npm run build",
     "pretest": "npm run build",
     "test": "mocha -r ts-node/register",
