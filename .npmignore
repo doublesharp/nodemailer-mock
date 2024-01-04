@@ -41,6 +41,7 @@ jspm_packages
 
 .github
 src
+mjs
 examples
 test
 .eslintignore
