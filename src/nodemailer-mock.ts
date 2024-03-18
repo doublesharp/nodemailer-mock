@@ -66,7 +66,7 @@ export interface NodemailerMock {
   };
 }
 
-class NodemailerMocked implements NodemailerMock {
+export class NodemailerMocked implements NodemailerMock {
   public nodemailer: NodemailerType | undefined;
 
   private _mockedVerify = true;
@@ -484,10 +484,12 @@ export class NodemailerMockMail
 
 // export the mock instance
 export const mocked = new NodemailerMocked(Nodemailer);
-export default mocked;
+
 // expose the mock functions
 export const { createTransport, mock, nodemailer } = mocked;
 // use this to pass in a real nodemailer instance
 export const getMockFor = (nodemailer?: NodemailerType) => {
   return new NodemailerMocked(nodemailer);
 };
+
+export default mocked;
