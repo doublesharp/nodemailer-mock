@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications",
   "repository": {
     "type": "git",
@@ -76,7 +76,6 @@
     "jest": "^29.7.0",
     "mocha": "^10.4.0",
     "mockery": "^2.1.0",
-    "npm-check-updates": "^16.14.18",
     "nyc": "^15.1.0",
     "shx": "^0.3.4",
     "spec-xunit-file": "^0.0.1-3",
