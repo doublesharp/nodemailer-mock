@@ -6,8 +6,6 @@
 
 Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
 
-From [SecretParty.io](https://www.secretparty.io) with ❤️.
-
 # install
 
 ```
@@ -150,14 +148,14 @@ transport.verify()
 try {
   const info = await transport.sendMail(email);
 } catch (err) {
-  console.log('Error!', err);
+  console.log("Error!", err);
 }
 
 // verify with async / wait
 try {
   const info = await transport.verify();
 } catch (err) {
-  console.log('Error!', err);
+  console.log("Error!", err);
 }
 ```
 
@@ -175,9 +173,9 @@ To mock `nodemailer` using `jest` create a file called `./__mocks__/nodemailer.j
  * ./__mocks__/nodemailer.js
  **/
 // load the real nodemailer
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 // pass it in when creating the mock using getMockFor()
-const nodemailermock = require('nodemailer-mock').getMockFor(nodemailer);
+const nodemailermock = require("nodemailer-mock").getMockFor(nodemailer);
 // export the mocked module
 module.exports = nodemailermock;
 ```
@@ -189,9 +187,9 @@ Once the mock file is created all calls to `nodemailer` from your tests will ret
  * Jest Test
  * ./__tests__/my-test.js
  **/
-const { mock } = require('nodemailer');
+const { mock } = require("nodemailer");
 
-test('Send an email using the mocked nodemailer', async () => {
+test("Send an email using the mocked nodemailer", async () => {
   /* ... run your tests that send emails here */
 
   // check the mock for our sent emails
@@ -199,7 +197,7 @@ test('Send an email using the mocked nodemailer', async () => {
   // there should be one
   expect(sentEmails.length).toBe(1);
   // and it should match the to address
-  expect(sentEmails[0].to).toBe('justin@to.com');
+  expect(sentEmails[0].to).toBe("justin@to.com");
 });
 ```
 
@@ -210,13 +208,13 @@ Using typescript you can coerce the NodemailerMock type.
  * Jest Test
  * ./__tests__/my-test.js
  **/
-import { expect, test } from '@jest/globals';
+import { expect, test } from "@jest/globals";
 // 'nodemailer' is automatically mocked in ./__mocks__/nodemailer.js
-import * as nodemailer from 'nodemailer';
-import { NodemailerMock } from 'nodemailer-mock';
+import * as nodemailer from "nodemailer";
+import { NodemailerMock } from "nodemailer-mock";
 const { mock } = nodemailer as unknown as NodemailerMock;
 
-test('Send an email using the mocked nodemailer + typescript', async () => {
+test("Send an email using the mocked nodemailer + typescript", async () => {
   /* ... run your tests that send emails here */
 
   // check the mock for our sent emails
@@ -224,7 +222,7 @@ test('Send an email using the mocked nodemailer + typescript', async () => {
   // there should be one
   expect(sentEmails.length).toBe(1);
   // and it should match the to address
-  expect(sentEmails[0].to).toBe('justin@to.com');
+  expect(sentEmails[0].to).toBe("justin@to.com");
 });
 ```
 
