@@ -22,7 +22,7 @@ Depending on your mock configuration `nodemailer-mock` may, or may not, have acc
 
 # mock api
 
-Use with test suites like [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked [`nodemailer`](https://www.npmjs.com/package/nodemailer).
+Use with test suites like [`jest`](https://www.npmjs.com/package/jest), [`mocha`](https://www.npmjs.com/package/mocha), [`vitest`](https://www.npmjs.com/package/vitest), and [`node:test`](https://nodejs.org/api/test.html). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked [`nodemailer`](https://www.npmjs.com/package/nodemailer).
 
 ## `NodemailerMock.mock` functions
 
