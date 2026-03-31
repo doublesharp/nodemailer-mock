@@ -41,11 +41,12 @@ jobs:
       with:
         node-version: '22'
     - run: npm ci
-    - uses: paambaati/codeclimate-action@v9.0.0
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+    - run: npm run coverage-report
+    - uses: codecov/codecov-action@v5
       with:
-        coverageCommand: npm run coverage-report
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        fail_ci_if_error: true
   badge:
     needs: [ test ]
     name: badge
