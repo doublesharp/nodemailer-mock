@@ -1,4 +1,4 @@
-name: CI - tests and coverage 
+name: CI - tests and coverage
 on:
   push:
     branches:
@@ -7,9 +7,11 @@ on:
       - '!*' # Do not execute on tags
     paths:
       - '*.js'
+      - '*.ts'
       - '*.json'
       - 'test/*'
-      - 'lib/*'
+      - 'src/*'
+      - 'src/**/*'
   pull_request:
     paths:
       - '!*.MD'
@@ -18,12 +20,12 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-latest ]
-        node: [ '18' ]
+        node: [ '20', '22' ]
     name: test/node ${{ matrix.node }}/${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-node@master
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node }}
     - run: npm ci
@@ -33,12 +35,12 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-node@master
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
     - run: npm ci
-    - uses: paambaati/codeclimate-action@v2.7.5
+    - uses: paambaati/codeclimate-action@v9.0.0
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
@@ -48,10 +50,10 @@ jobs:
     name: badge
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-node@master
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
 
     - run: npm ci
     - run: |
@@ -65,7 +67,7 @@ jobs:
         BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
         echo $BRANCH_NAME
         echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-    - uses: schneegans/dynamic-badges-action@v1.0.0
+    - uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: bc53be57c56fa0c0fc80a29164cc22fc
@@ -74,4 +76,3 @@ jobs:
         message: ${{ env.COVERAGE }}
         color: green
         namedLogo: nyc
-  
