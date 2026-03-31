@@ -161,7 +161,7 @@ try {
 
 # example tests using mocked module
 
-To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest) and [`mocha`](https://www.npmjs.com/package/mocha) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha` tests are in `./examples/test`. Run the examples with `npm run example:jest` and `npm run example:mocha`. Both JavaScript and TypeScript example tests are provided.
+To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest), [`mocha`](https://www.npmjs.com/package/mocha), [`vitest`](https://www.npmjs.com/package/vitest), and [`node:test`](https://nodejs.org/api/test.html) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha`, `vitest`, and `node:test` tests are in `./examples/test`. Run the examples with `npm run example:jest`, `npm run example:mocha`, `npm run example:node-test`, and `npm run example:vitest`. Both JavaScript and TypeScript example tests are provided.
 
 ## example using jest
 
@@ -317,6 +317,83 @@ describe('Tests that send email',  async () {
 
     /* calls to transport.verify() will be passed through,
        transporter.send() is still mocked */
+  });
+});
+```
+
+## example using vitest
+
+To mock `nodemailer` using [`vitest`](https://www.npmjs.com/package/vitest), use `vi.mock()` to replace `nodemailer` with `nodemailer-mock`:
+
+```javascript
+/**
+ * Vitest Test
+ * ./test/my-test.test.mjs
+ **/
+import { describe, it, beforeEach, expect, vi } from "vitest";
+import nodemailermock from "nodemailer-mock";
+
+// Mock nodemailer with nodemailer-mock
+vi.mock("nodemailer", () => {
+  return import("nodemailer-mock");
+});
+
+describe("Tests that send email", () => {
+  beforeEach(() => {
+    nodemailermock.mock.reset();
+  });
+
+  it("should send an email using nodemailer-mock", async () => {
+    // import the module under test after mocking
+    const nodemailer = await import("nodemailer");
+    const transport = nodemailer.createTransport({});
+    await transport.sendMail({ to: "justin@to.com", from: "justin@from.com" });
+
+    // check the mock for our sent emails
+    const sentEmails = nodemailermock.mock.getSentMail();
+    // there should be one
+    expect(sentEmails.length).toBe(1);
+    // and it should match the to address
+    expect(sentEmails[0].to).toBe("justin@to.com");
+  });
+});
+```
+
+## example using node:test
+
+Node.js has a built-in test runner ([`node:test`](https://nodejs.org/api/test.html)) with module mocking support. This requires Node.js >= v22.3.0 and the `--experimental-test-module-mocks` flag.
+
+```javascript
+/**
+ * node:test Test
+ * ./test/my-test.mjs
+ *
+ * Run with: node --experimental-test-module-mocks --test ./test/my-test.mjs
+ **/
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert/strict";
+
+// Register the mock *before* importing modules that use nodemailer
+const nodemailermock = await import("nodemailer-mock");
+mock.module("nodemailer", { namedExports: nodemailermock });
+
+// Now import the module under test
+const myModule = await import("./my-module.js");
+
+describe("Tests that send email", () => {
+  beforeEach(() => {
+    nodemailermock.mock.reset();
+  });
+
+  it("should send an email using nodemailer-mock", async () => {
+    await myModule.sendEmail();
+
+    // check the mock for our sent emails
+    const sentEmails = nodemailermock.mock.getSentMail();
+    // there should be one
+    assert.equal(sentEmails.length, 1);
+    // and it should match the to address
+    assert.equal(sentEmails[0].to, "justin@to.com");
   });
 });
 ```

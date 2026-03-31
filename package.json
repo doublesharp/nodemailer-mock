@@ -45,9 +45,11 @@
     "coverage-badge": "istanbul-cobertura-badger -e 95 -g 85 -b \"${PWD##*/}\"",
     "lint": "eslint . --ext .ts",
     "inspect": "NODE_ENV=test npm run test -- -s 0 --inspect --debug-brk",
-    "examples": "npm run example:jest && npm run example:mocha",
+    "examples": "npm run example:jest && npm run example:mocha && npm run example:node-test && npm run example:vitest",
     "example:jest": "jest examples",
-    "example:mocha": "cd examples; mocha -r ts-node/register"
+    "example:mocha": "cd examples; mocha -r ts-node/register",
+    "example:node-test": "node --experimental-test-module-mocks --test examples/test/node-test-example-javascript.mjs",
+    "example:vitest": "vitest run examples/test/vitest-example-javascript.test.mjs"
   },
   "dependencies": {
     "debug": "^4.4.3"
