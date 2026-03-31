@@ -1,12 +1,10 @@
 'use strict';
 
-import { expect, should } from 'chai';
+import { expect } from 'chai';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 import * as nodemailer from 'nodemailer';
 import * as mocked from '../src/nodemailer-mock';
 import { messages } from '../src/lib/messages';
-
-should();
 
 const transporter = mocked.createTransport({
   name: 'test',
@@ -24,19 +22,19 @@ describe('Testing nodemailer-mock...', () => {
   describe('module loading', () => {
     it('should let you create a mock using the real nodemailer using getMockFor(nodemailer)', async () => {
       // it's the real one...
-      nodemailer.should.not.have.property('mock');
+      expect(nodemailer).to.not.have.property('mock');
       // load the mock using the real one
       const testMock = mocked.getMockFor(nodemailer);
-      'undefined'.should.not.equal(typeof testMock);
+      expect(typeof testMock).to.not.equal('undefined');
       // it's the mock one...
-      testMock.should.have.property('mock');
+      expect(testMock).to.have.property('mock');
     });
 
     it('should let you create a mock using getMockFor but with defaults', async () => {
       const testMock = mocked.getMockFor();
-      'undefined'.should.not.equal(typeof testMock);
+      expect(typeof testMock).to.not.equal('undefined');
       // it's the mock one...
-      testMock.should.have.property('mock');
+      expect(testMock).to.have.property('mock');
     });
   });
 
@@ -64,13 +62,13 @@ describe('Testing nodemailer-mock...', () => {
       const transporter = transporters[transporters.length - 1];
       const plugins = transporter.mock.getPlugins();
       const { compile: plugin } = plugins;
-      'function'.should.equal(typeof plugin[0]);
+      expect(typeof plugin[0]).to.equal('function');
 
       await pluginsNotUsed.sendMail({
         subject: 'test',
       });
 
-      hasPluginRun.should.equal(false);
+      expect(hasPluginRun).to.equal(false);
 
       // add it under a new key
       pluginsNotUsed.use('compile2', plugin1);
@@ -91,9 +89,9 @@ describe('Testing nodemailer-mock...', () => {
       const transporter2 = transporters2[transporters2.length - 1];
       const plugins2 = transporter2.mock.getPlugins();
       const { compile: plugin2 } = plugins2;
-      'function'.should.equal(typeof plugin2[0]);
+      expect(typeof plugin2[0]).to.equal('function');
 
-      hasPluginRun.should.equal(true);
+      expect(hasPluginRun).to.equal(true);
     });
 
     it('should emulate transporter.isIdle() set status', (done) => {
@@ -173,7 +171,7 @@ describe('Testing nodemailer-mock...', () => {
         },
         (err, info) => {
           expect(err).equal(null);
-          messages.success_response.should.equal(info && info.response);
+          expect(info && info.response).to.equal(messages.success_response);
           done();
         }
       );
@@ -188,7 +186,7 @@ describe('Testing nodemailer-mock...', () => {
         message,
         (err, info: nodemailer.SentMessageInfo) => {
           expect(err).equal(null);
-          messages.success_response.should.equal(info && info.response);
+          expect(info && info.response).to.equal(messages.success_response);
           done();
         }
       );
@@ -200,12 +198,12 @@ describe('Testing nodemailer-mock...', () => {
       // Send an email that should succeed
       transporter.sendMail(email, (err, info) => {
         expect(err).equal(null);
-        messages.success_response.should.equal(info && info.response);
+        expect(info && info.response).to.equal(messages.success_response);
         // Check that our email was put into the sentMail cache
         const sentMail = mocked.mock.getSentMail();
         // expect(sentMail).not.be.empty();
-        sentMail.length.should.equal(1);
-        sentMail[0].subject?.should.equal(email.subject);
+        expect(sentMail.length).to.equal(1);
+        expect(sentMail[0].subject).to.equal(email.subject);
         done();
       });
     });
@@ -221,8 +219,8 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject',
         },
         (err1, info1) => {
-          messages.fail_response.should.equal(err1);
-          messages.fail_response.should.equal(info1 && info1.response);
+          expect(err1).to.equal(messages.fail_response);
+          expect(info1 && info1.response).to.equal(messages.fail_response);
 
           // Send an email that should succeed
           transporter.sendMail(
@@ -231,7 +229,7 @@ describe('Testing nodemailer-mock...', () => {
             },
             (err2, info2) => {
               expect(err2).equal(null);
-              messages.success_response.should.equal(info2 && info2.response);
+              expect(info2 && info2.response).to.equal(messages.success_response);
               done();
             }
           );
@@ -250,7 +248,7 @@ describe('Testing nodemailer-mock...', () => {
         },
         (err1, info1) => {
           expect(err1).equal(messages.fail_response);
-          messages.fail_response.should.equal(info1 && info1.response);
+          expect(info1 && info1.response).to.equal(messages.fail_response);
 
           // Send another email that should fail
           transporter.sendMail(
@@ -259,7 +257,7 @@ describe('Testing nodemailer-mock...', () => {
             },
             (err2, info2) => {
               expect(err2).equal(messages.fail_response);
-              messages.fail_response.should.equal(info2 && info2.response);
+              expect(info2 && info2.response).to.equal(messages.fail_response);
 
               // tell the mock to succeed when sending
               mocked.mock.setShouldFail(false);
@@ -271,8 +269,8 @@ describe('Testing nodemailer-mock...', () => {
                 },
                 (err3, info3) => {
                   expect(err3).equal(null);
-                  messages.success_response.should.equal(
-                    info3 && info3.response
+                  expect(info3 && info3.response).to.equal(
+                    messages.success_response
                   );
                   done();
                 }
@@ -297,7 +295,7 @@ describe('Testing nodemailer-mock...', () => {
         },
         (err1, info1) => {
           expect(err1).equal(messages.fail_response);
-          messages.fail_response.should.equal(info1 && info1.response);
+          expect(info1 && info1.response).to.equal(messages.fail_response);
 
           // Send an email that should succeed
           transporter.sendMail(
@@ -306,7 +304,7 @@ describe('Testing nodemailer-mock...', () => {
             },
             (err2, info2) => {
               expect(err2).equal(null);
-              messages.success_response.should.equal(info2 && info2.response);
+              expect(info2 && info2.response).to.equal(messages.success_response);
               done();
             }
           );
@@ -326,7 +324,7 @@ describe('Testing nodemailer-mock...', () => {
         },
         (err, info) => {
           expect(err).equal(null);
-          customSuccess.should.equal(info && info.response);
+          expect(info && info.response).to.equal(customSuccess);
           done();
         }
       );
@@ -348,7 +346,7 @@ describe('Testing nodemailer-mock...', () => {
         },
         (err, info) => {
           expect(err).equal(customError);
-          customError.should.equal(info && info.response);
+          expect(info && info.response).to.equal(customError);
           done();
         }
       );
@@ -357,7 +355,7 @@ describe('Testing nodemailer-mock...', () => {
     it('should return verify success using the mocked nodemailer transport', (done) => {
       transporter.verify((err, success) => {
         expect(err).equal(null);
-        success.should.equal(true);
+        expect(success).to.equal(true);
         done();
       });
     });
@@ -366,7 +364,7 @@ describe('Testing nodemailer-mock...', () => {
       mocked.mock.setShouldFailOnce();
       transporter.verify((err) => {
         expect(err).not.equal(null);
-        messages.fail_response.should.deep.equal(err);
+        expect(err).to.deep.equal(messages.fail_response);
         done();
       });
     });
@@ -376,8 +374,8 @@ describe('Testing nodemailer-mock...', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transporter.verify((err: any) => {
         expect(err).not.equal(null);
-        err.code.should.equal('ECONNECTION');
-        err.command.should.equal('CONN');
+        expect(err.code).to.equal('ECONNECTION');
+        expect(err.command).to.equal('CONN');
         done();
       });
     });
@@ -390,8 +388,8 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject',
         })
         .then((info) => {
-          messages.success_response.should.equal(info && info.response);
-          info.response.should.equal(messages.success_response);
+          expect(info && info.response).to.equal(messages.success_response);
+          expect(info.response).to.equal(messages.success_response);
           done();
         });
     });
@@ -404,12 +402,12 @@ describe('Testing nodemailer-mock...', () => {
 
       // Send an email that should succeed
       transporter.sendMail(email).then((info) => {
-        info.response.should.equal(messages.success_response);
+        expect(info.response).to.equal(messages.success_response);
         // Check that our email was put into the sentMail cache
         const sentMail = mocked.mock.getSentMail();
         // expect(sentMail).not.be.empty();
-        sentMail.length.should.equal(1);
-        sentMail[0].subject?.should.equal(email.subject);
+        expect(sentMail.length).to.equal(1);
+        expect(sentMail[0].subject).to.equal(email.subject);
         done();
       });
     });
@@ -431,7 +429,7 @@ describe('Testing nodemailer-mock...', () => {
               subject: 'Subject',
             })
             .then((info) => {
-              info.response.should.equal(messages.success_response);
+              expect(info.response).to.equal(messages.success_response);
               done();
             });
         });
@@ -460,7 +458,7 @@ describe('Testing nodemailer-mock...', () => {
                   subject: 'Subject 3',
                 })
                 .then((info) => {
-                  info.response.should.equal(messages.success_response);
+                  expect(info.response).to.equal(messages.success_response);
                   done();
                 });
             });
@@ -486,7 +484,7 @@ describe('Testing nodemailer-mock...', () => {
               subject: 'Subject',
             })
             .then((info) => {
-              info.response.should.equal(messages.success_response);
+              expect(info.response).to.equal(messages.success_response);
               done();
             });
         });
@@ -503,7 +501,7 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject',
         })
         .then((info) => {
-          info.response.should.equal(customSuccess);
+          expect(info.response).to.equal(customSuccess);
           done();
         });
     });
@@ -523,7 +521,7 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject',
         })
         .catch((err) => {
-          err.should.equal(customError);
+          expect(err).to.equal(customError);
           done();
         });
     });
@@ -532,7 +530,7 @@ describe('Testing nodemailer-mock...', () => {
       const promise = transporter.verify();
       if (promise instanceof Promise) {
         promise.then((success) => {
-          success.should.equal(true);
+          expect(success).to.equal(true);
           return done();
         });
       } else {
@@ -546,7 +544,7 @@ describe('Testing nodemailer-mock...', () => {
       if (promise instanceof Promise) {
         promise.catch((err) => {
           expect(err).not.equal(null);
-          err.should.deep.equal(messages.fail_response);
+          expect(err).to.deep.equal(messages.fail_response);
           done();
         });
       } else {
@@ -560,8 +558,8 @@ describe('Testing nodemailer-mock...', () => {
       if (promise instanceof Promise) {
         promise.catch((err) => {
           // expect(err).not.equal(null);
-          err.code.should.equal('ECONNECTION');
-          err.command.should.equal('CONN');
+          expect(err.code).to.equal('ECONNECTION');
+          expect(err.command).to.equal('CONN');
           done();
         });
       } else {
@@ -575,8 +573,8 @@ describe('Testing nodemailer-mock...', () => {
       const info = await transporter.sendMail({
         subject: 'Subject',
       });
-      messages.success_response.should.equal(info && info.response);
-      info.response.should.equal(messages.success_response);
+      expect(info && info.response).to.equal(messages.success_response);
+      expect(info.response).to.equal(messages.success_response);
     });
 
     it('should have the sent email available in the mock.getSentMail()', async () => {
@@ -586,12 +584,12 @@ describe('Testing nodemailer-mock...', () => {
       };
       // Send an email that should succeed
       const info = await transporter.sendMail(email);
-      messages.success_response.should.equal(info && info.response);
+      expect(info && info.response).to.equal(messages.success_response);
       // Check that our email was put into the sentMail cache
       const sentMail = mocked.mock.getSentMail();
       // expect(sentMail).not.be.empty();
-      sentMail.length.should.equal(1);
-      sentMail[0].subject?.should.equal(email.subject);
+      expect(sentMail.length).to.equal(1);
+      expect(sentMail[0].subject).to.equal(email.subject);
     });
 
     it('should fail once then succeed for email sending', async () => {
@@ -615,7 +613,7 @@ describe('Testing nodemailer-mock...', () => {
         const info = await transporter.sendMail({
           subject: 'Subject',
         });
-        info.response.should.equal(messages.success_response);
+        expect(info.response).to.equal(messages.success_response);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         expect(err.message).equal(null);
@@ -650,7 +648,7 @@ describe('Testing nodemailer-mock...', () => {
       const info = await transporter.sendMail({
         subject: 'Subject 3',
       });
-      info.response.should.equal(messages.success_response);
+      expect(info.response).to.equal(messages.success_response);
     });
 
     it('should fail if shouldFailCheck returns true for message', async () => {
@@ -676,7 +674,7 @@ describe('Testing nodemailer-mock...', () => {
         const info = await transporter.sendMail({
           subject: 'Subject',
         });
-        info.response.should.equal(messages.success_response);
+        expect(info.response).to.equal(messages.success_response);
       } catch (err) {
         expect(err).equal(null);
       }
@@ -691,7 +689,7 @@ describe('Testing nodemailer-mock...', () => {
       const info = await transporter.sendMail({
         subject: 'Subject',
       });
-      info.response.should.equal(customSuccess);
+      expect(info.response).to.equal(customSuccess);
     });
 
     it('should have a custom error message', async () => {
@@ -711,13 +709,13 @@ describe('Testing nodemailer-mock...', () => {
         throw new Error(); // this should not happen
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
-        err.should.equal(customError);
+        expect(err).to.equal(customError);
       }
     });
 
     it('should return verify success using the mocked nodemailer transport', async () => {
       const success = await transporter.verify();
-      success.should.equal(true);
+      expect(success).to.equal(true);
     });
 
     it('should return verify failure using the mocked nodemailer transport', async () => {
@@ -728,7 +726,7 @@ describe('Testing nodemailer-mock...', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         expect(err).not.equal(null);
-        err.should.deep.equal(messages.fail_response);
+        expect(err).to.deep.equal(messages.fail_response);
       }
     });
 
@@ -740,8 +738,8 @@ describe('Testing nodemailer-mock...', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         expect(err).not.equal(null);
-        err.code.should.equal('ECONNECTION');
-        err.command.should.equal('CONN');
+        expect(err.code).to.equal('ECONNECTION');
+        expect(err.command).to.equal('CONN');
       }
     });
   });
