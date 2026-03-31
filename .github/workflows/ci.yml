@@ -1,5 +1,6 @@
 name: CI - tests and coverage
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
