@@ -4,6 +4,12 @@
   "compileOnSave": true,
   "include": ["src/**/*.ts"],
 
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
   "compilerOptions": {
     "declaration": true,
     "esModuleInterop": true,
