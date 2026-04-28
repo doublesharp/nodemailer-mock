@@ -26,12 +26,12 @@ jobs:
     name: test/node ${{ matrix.node }}/${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: pnpm/action-setup@v4
+    - uses: actions/checkout@v6
+    - uses: pnpm/action-setup@v5
       with:
         version: 10.33.2
         run_install: false
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node }}
         cache: pnpm
@@ -42,18 +42,18 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: pnpm/action-setup@v4
+    - uses: actions/checkout@v6
+    - uses: pnpm/action-setup@v5
       with:
         version: 10.33.2
         run_install: false
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: pnpm
     - run: pnpm install --frozen-lockfile
     - run: pnpm run nyc
-    - uses: codecov/codecov-action@v5
+    - uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage/lcov.info

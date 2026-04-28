@@ -7,6 +7,7 @@ on:
   pull_request:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -21,16 +22,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           version: 10.33.2
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: pnpm
@@ -39,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Restore Doublcov history
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .doublcov/history.json
           key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -59,14 +60,14 @@ jobs:
 
       - name: Save Doublcov history
         if: always() && hashFiles('.doublcov/history.json') != ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .doublcov/history.json
           key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Upload Doublcov report
         if: always() && hashFiles('coverage/report/index.html') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: doublcov-report
           path: coverage/report
@@ -74,7 +75,7 @@ jobs:
 
       - name: Upload coverage data
         if: always() && hashFiles('coverage/lcov.info') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: doublcov-data
           path: |
@@ -126,7 +127,7 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && hashFiles('pages/coverage/index.html') != ''
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: pages
 
@@ -155,7 +156,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}coverage/
     steps:
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Deploy to GitHub Pages
         id: deployment
