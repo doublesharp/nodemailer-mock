@@ -41,7 +41,7 @@ jobs:
       with:
         node-version: '22'
     - run: npm ci
-    - run: npm run coverage-report
+    - run: npm run nyc
     - uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

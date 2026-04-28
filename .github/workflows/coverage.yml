@@ -42,7 +42,7 @@ jobs:
             doublcov-history-
 
       - name: Generate LCOV
-        run: npm run coverage-report
+        run: npm run nyc
 
       - name: Generate Doublcov report
         uses: doublesharp/doublcov@v0
@@ -107,7 +107,7 @@ jobs:
             namedLogo: "nyc"
           };
 
-          fs.writeFileSync("pages/coverage.badge.json", `${JSON.stringify(badge, null, 2)}\n`);
+          fs.writeFileSync("pages/coverage-badge.json", `${JSON.stringify(badge, null, 2)}\n`);
           NODE
           cat > pages/index.html <<'HTML'
           <!doctype html>
@@ -161,5 +161,5 @@ jobs:
             echo "## Published coverage"
             echo
             echo "${{ steps.deployment.outputs.page_url }}coverage/"
-            echo "${{ steps.deployment.outputs.page_url }}coverage.badge.json"
+            echo "${{ steps.deployment.outputs.page_url }}coverage-badge.json"
           } >> "$GITHUB_STEP_SUMMARY"

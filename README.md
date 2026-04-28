@@ -1,7 +1,7 @@
 # nodemailer-mock
 
 [![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
-[![Code Coverage Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdoublesharp.github.io%2Fnodemailer-mock%2Fcoverage.badge.json)](https://doublesharp.github.io/nodemailer-mock/coverage/)
+[![Code Coverage Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdoublesharp.github.io%2Fnodemailer-mock%2Fcoverage-badge.json)](https://doublesharp.github.io/nodemailer-mock/coverage/)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
 Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
