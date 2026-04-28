@@ -1,23 +1,27 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 'use strict';
 
-const mockery = require('mockery');
+const Module = require('module');
 const { expect } = require('chai');
 const nodemailermock = require('../../dist/nodemailer-mock');
 const { mock } = nodemailermock;
+const originalLoad = Module._load;
 
-describe('Mocha + Mockery JavaScript', function () {
+describe('Mocha + CommonJS JavaScript', function () {
   // we need to mock nodemailer *before* we require() any modules that load it
   before(async () => {
-    // Enable mockery to mock objects
-    mockery.enable({
-      warnOnUnregistered: false,
-      useCleanCache: true,
-    });
-
-    // mock here
-    mockery.registerMock('nodemailer', nodemailermock);
+    Module._load = function (request, parent, isMain) {
+      if (request === 'nodemailer') {
+        return nodemailermock;
+      }
+      return originalLoad.call(this, request, parent, isMain);
+    };
+    delete require.cache[require.resolve('../mailer-test')];
     mock.reset();
+  });
+
+  after(() => {
+    Module._load = originalLoad;
+    delete require.cache[require.resolve('../mailer-test')];
   });
 
   // run a test

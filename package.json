@@ -46,8 +46,8 @@
     "lint": "eslint . --ext .ts",
     "inspect": "NODE_ENV=test npm run test -- -s 0 --inspect --debug-brk",
     "examples": "npm run example:jest && npm run example:mocha && npm run example:node-test && npm run example:vitest",
-    "example:jest": "jest examples",
-    "example:mocha": "cd examples; mocha -r ts-node/register",
+    "example:jest": "jest examples/__tests__",
+    "example:mocha": "cd examples; mocha -r ts-node/register test/mocha-commonjs-example-javascript.js test/mocha-commonjs-example-typescript.ts",
     "example:node-test": "node --experimental-test-module-mocks --test examples/test/node-test-example-javascript.mjs",
     "example:vitest": "vitest run examples/test/vitest-example-javascript.test.mjs"
   },
@@ -64,7 +64,6 @@
     "@types/expect": "^24.3.2",
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
-    "@types/mockery": "^1.4.33",
     "@types/node": "^25.5.0",
     "@types/nodemailer": "^7.x",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
@@ -74,13 +73,36 @@
     "istanbul-cobertura-badger": "^1.3.1",
     "jest": "^30.3.0",
     "mocha": "^11.7.5",
-    "mockery": "^2.1.0",
+    "nodemailer": "~8.0.7",
     "nyc": "^18.0.0",
     "shx": "^0.4.0",
     "spec-xunit-file": "^0.0.1-3",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.5"
+  },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "~3.14.2"
+    },
+    "anymatch": {
+      "picomatch": "~2.3.2"
+    },
+    "istanbul-lib-processinfo": {
+      "uuid": "~14.0.0"
+    },
+    "micromatch": {
+      "picomatch": "~2.3.2"
+    },
+    "mocha": {
+      "diff": "~8.0.3",
+      "js-yaml": "~4.1.1",
+      "serialize-javascript": "~7.0.3"
+    },
+    "ts-node": {
+      "diff": "~4.0.4"
+    }
   },
   "pre-commit": [
     "lint"

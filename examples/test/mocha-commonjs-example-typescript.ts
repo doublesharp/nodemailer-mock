@@ -1,21 +1,39 @@
-import * as mockery from 'mockery';
 import { expect } from 'chai';
+import Module = require('module');
 import * as nodemailermock from '../../dist/nodemailer-mock';
 const { mock } = nodemailermock;
 
-describe('Mocha + Mockery TypeScript', function () {
+type LoadFunction = (
+  this: unknown,
+  request: string,
+  parent: NodeModule | null,
+  isMain: boolean
+) => unknown;
+
+const moduleLoader = Module as unknown as { _load: LoadFunction };
+const originalLoad = moduleLoader._load;
+
+const clearMailerCache = () => {
+  const mailerPath = require.resolve('../mailer-test');
+  delete require.cache[mailerPath];
+};
+
+describe('Mocha + CommonJS TypeScript', function () {
   // we need to mock nodemailer *before* we require() any modules that load it
   before(async () => {
-    // Enable mockery to mock objects
-    mockery.enable({
-      warnOnUnregistered: false,
-      useCleanCache: true,
-    });
-
-    // mock here
-    mockery.registerMock('nodemailer', nodemailermock);
-
+    moduleLoader._load = function (this: unknown, request, parent, isMain) {
+      if (request === 'nodemailer') {
+        return nodemailermock;
+      }
+      return originalLoad.call(this, request, parent, isMain);
+    };
+    clearMailerCache();
     mock.reset();
+  });
+
+  after(() => {
+    moduleLoader._load = originalLoad;
+    clearMailerCache();
   });
 
   // run a test

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 'use strict';
 
 // 'nodemailer' is automatically mocked in ./__mocks__/nodemailer.js

@@ -18,7 +18,7 @@ yarn add -D nodemailer-mock
 
 # module loading
 
-Depending on your mock configuration `nodemailer-mock` may, or may not, have access to `nodemailer` when it is loaded. For example, using `mockery` you can replace `nodemailer` with `require('nodemailer-mock')`, however in `jest` you will need to inject `nodemailer` using `module.exports = require('nodemailer-mock').getMockFor(require('nodemailer'));`
+Depending on your mock configuration `nodemailer-mock` may, or may not, have access to `nodemailer` when it is loaded. For CommonJS tests, replace `nodemailer` before app code imports it; in `jest` you will need to inject `nodemailer` using `module.exports = require('nodemailer-mock').getMockFor(require('nodemailer'));`
 
 # mock api
 
@@ -226,18 +226,19 @@ test("Send an email using the mocked nodemailer + typescript", async () => {
 });
 ```
 
-## example using mocha and mockery
+## example using mocha
 
-Here is an example of using a mocked `nodemailer` class in a [`mocha`](https://www.npmjs.com/package/mocha) test using [`mockery`](https://www.npmjs.com/package/mockery). Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
+Here is an example of using a mocked `nodemailer` class in a [`mocha`](https://www.npmjs.com/package/mocha) test using a small CommonJS require hook. Make sure that any modules that `require()`'s a mocked module must be called AFTER the module is mocked or node will use the unmocked version from the module cache. Note that this example uses `async/await`. See the module tests for additional example code.
 
 ```javascript
 /**
- * Mocha Test / Mockery Mock
+ * Mocha Test / CommonJS Mock
  * ./test/my-test.js
  **/
 const { expect } = require('chai');
-const mockery = require('mockery');
+const Module = require('module');
 const nodemailermock = require('nodemailer-mock');
+const originalLoad = Module._load;
 
 describe('Tests that send email',  async () {
 
@@ -246,14 +247,14 @@ describe('Tests that send email',  async () {
   let app = null;
 
   before(async () {
-    // Enable mockery to mock objects
-    mockery.enable({
-      warnOnUnregistered: false,
-    });
-
     /* Once mocked, any code that calls require('nodemailer')
     will get our nodemailermock */
-    mockery.registerMock('nodemailer', nodemailermock)
+    Module._load = function (request, parent, isMain) {
+      if (request === 'nodemailer') {
+        return nodemailermock;
+      }
+      return originalLoad.call(this, request, parent, isMain);
+    };
 
     /*
     ##################
@@ -272,9 +273,8 @@ describe('Tests that send email',  async () {
   });
 
   after(async () {
-    // Remove our mocked nodemailer and disable mockery
-    mockery.deregisterAll();
-    mockery.disable();
+    // Restore the original CommonJS loader
+    Module._load = originalLoad;
   });
 
   it('should send an email using nodemailer-mock', async () {
