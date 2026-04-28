@@ -49,6 +49,10 @@ test
 .eslintrc
 .gitignore
 .mocharc.json
+doublcov.config.json
+eslint.config.cjs
 jest.config.json
+knip.json
 nyc.config.js
+pnpm-lock.yaml
 tsconfig.json

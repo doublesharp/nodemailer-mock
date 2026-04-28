@@ -13,6 +13,10 @@ npm install nodemailer-mock --save-dev
 ```
 
 ```
+pnpm add -D nodemailer-mock
+```
+
+```
 yarn add -D nodemailer-mock
 ```
 
@@ -161,7 +165,7 @@ try {
 
 # example tests using mocked module
 
-To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest), [`mocha`](https://www.npmjs.com/package/mocha), [`vitest`](https://www.npmjs.com/package/vitest), and [`node:test`](https://nodejs.org/api/test.html) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha`, `vitest`, and `node:test` tests are in `./examples/test`. Run the examples with `npm run example:jest`, `npm run example:mocha`, `npm run example:node-test`, and `npm run example:vitest`. Both JavaScript and TypeScript example tests are provided.
+To use `nodemailer-mock` in your tests you will need to mock `nodemailer` with it. There are working examples using [`jest`](https://www.npmjs.com/package/jest), [`mocha`](https://www.npmjs.com/package/mocha), [`vitest`](https://www.npmjs.com/package/vitest), and [`node:test`](https://nodejs.org/api/test.html) in the [`./examples/`](https://github.com/doublesharp/nodemailer-mock/tree/master/examples) folder of the project. The `jest` code is in `./examples/__mocks__` and `./examples/__tests__`, and the `mocha`, `vitest`, and `node:test` tests are in `./examples/test`. Run the examples with `pnpm run example:jest`, `pnpm run example:mocha`, `pnpm run example:node-test`, and `pnpm run example:vitest`. Both JavaScript and TypeScript example tests are provided.
 
 ## example using jest
 

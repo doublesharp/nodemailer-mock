@@ -23,14 +23,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+          run_install: false
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Restore Doublcov history
         uses: actions/cache/restore@v4
@@ -42,7 +48,7 @@ jobs:
             doublcov-history-
 
       - name: Generate LCOV
-        run: npm run nyc
+        run: pnpm run nyc
 
       - name: Generate Doublcov report
         uses: doublesharp/doublcov@v0
@@ -131,7 +137,7 @@ jobs:
             echo "## Doublcov coverage"
             echo
             if [ "${{ github.event_name }}" = "pull_request" ]; then
-              echo "Download and extract the \`doublcov-report\` artifact, then preview it with \`npx @0xdoublesharp/doublcov@latest open coverage/report\`."
+              echo "Download and extract the \`doublcov-report\` artifact, then preview it with \`pnpm dlx @0xdoublesharp/doublcov@latest open coverage/report\`."
             else
               echo "This run also publishes the report and badge endpoint to GitHub Pages."
             fi

@@ -10,6 +10,7 @@ on:
       - '*.js'
       - '*.ts'
       - '*.json'
+      - 'pnpm-lock.yaml'
       - 'test/*'
       - 'src/*'
       - 'src/**/*'
@@ -26,22 +27,32 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10.33.2
+        run_install: false
     - uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node }}
-    - run: npm ci
-    - run: npm run test
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm run test
   coverage:
     needs: [ test ]
     name: coverage
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10.33.2
+        run_install: false
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
-    - run: npm ci
-    - run: npm run nyc
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm run nyc
     - uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
