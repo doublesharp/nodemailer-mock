@@ -47,34 +47,3 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage/lcov.info
         fail_ci_if_error: true
-  badge:
-    needs: [ test ]
-    name: badge
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-
-    - run: npm ci
-    - run: |
-        COVERAGE_ALL="$(npm run coverage-report | grep "All files" | cut -f 5 -d'|' | xargs)%"
-        echo "All file Coverage $COVERAGE_ALL"
-        echo "COVERAGE=$(echo ${COVERAGE_ALL})" >> $GITHUB_ENV
-
-        REF=${{ github.ref }}
-        echo "github.ref: $REF"
-        IFS='/' read -ra PATHS <<< "$REF"
-        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
-        echo $BRANCH_NAME
-        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-    - uses: schneegans/dynamic-badges-action@v1.7.0
-      with:
-        auth: ${{ secrets.GIST_SECRET }}
-        gistID: bc53be57c56fa0c0fc80a29164cc22fc
-        filename: nodemailer-mock__${{ env.BRANCH }}.json
-        label: Test Coverage
-        message: ${{ env.COVERAGE }}
-        color: green
-        namedLogo: nyc

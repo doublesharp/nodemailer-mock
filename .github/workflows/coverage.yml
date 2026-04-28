@@ -1,0 +1,165 @@
+name: Coverage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  doublcov:
+    name: Doublcov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Doublcov history
+        uses: actions/cache/restore@v4
+        with:
+          path: .doublcov/history.json
+          key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            doublcov-history-${{ github.ref_name }}-
+            doublcov-history-
+
+      - name: Generate LCOV
+        run: npm run coverage-report
+
+      - name: Generate Doublcov report
+        uses: doublesharp/doublcov@v0
+        with:
+          version: latest
+          command: build
+          args: --mode static
+
+      - name: Save Doublcov history
+        if: always() && hashFiles('.doublcov/history.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .doublcov/history.json
+          key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload Doublcov report
+        if: always() && hashFiles('coverage/report/index.html') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: doublcov-report
+          path: coverage/report
+          if-no-files-found: error
+
+      - name: Upload coverage data
+        if: always() && hashFiles('coverage/lcov.info') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: doublcov-data
+          path: |
+            coverage/lcov.info
+            .doublcov/history.json
+          if-no-files-found: warn
+          include-hidden-files: true
+
+      - name: Prepare Pages artifact
+        if: github.event_name != 'pull_request' && hashFiles('coverage/report/index.html') != ''
+        run: |
+          mkdir -p pages/coverage
+          cp -R coverage/report/. pages/coverage/
+          node <<'NODE'
+          const fs = require("fs");
+          const lcov = fs.readFileSync("coverage/lcov.info", "utf8");
+          let found = 0;
+          let hit = 0;
+
+          for (const line of lcov.split(/\r?\n/)) {
+            if (line.startsWith("LF:")) {
+              found += Number(line.slice(3));
+            } else if (line.startsWith("LH:")) {
+              hit += Number(line.slice(3));
+            }
+          }
+
+          const percentage = found === 0 ? 0 : (hit / found) * 100;
+          const message = `${Number(percentage.toFixed(2))}%`;
+          const color = percentage >= 95 ? "brightgreen" : percentage >= 85 ? "yellow" : "red";
+          const badge = {
+            schemaVersion: 1,
+            label: "Test Coverage",
+            message,
+            color,
+            namedLogo: "nyc"
+          };
+
+          fs.writeFileSync("pages/coverage.badge.json", `${JSON.stringify(badge, null, 2)}\n`);
+          NODE
+          cat > pages/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>nodemailer-mock coverage</title>
+          <script>location.replace("coverage/" + location.hash);</script>
+          <meta http-equiv="refresh" content="0; url=coverage/">
+          <a href="coverage/">nodemailer-mock coverage report</a>
+          HTML
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && hashFiles('pages/coverage/index.html') != ''
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Write summary
+        if: always() && hashFiles('coverage/report/index.html') != ''
+        run: |
+          {
+            echo "## Doublcov coverage"
+            echo
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "Download and extract the \`doublcov-report\` artifact, then preview it with \`npx @0xdoublesharp/doublcov@latest open coverage/report\`."
+            else
+              echo "This run also publishes the report and badge endpoint to GitHub Pages."
+            fi
+            echo
+            echo "History is restored from and saved to the \`doublcov-history-*\` Actions cache keys."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  pages:
+    name: Publish coverage page
+    needs: doublcov
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}coverage/
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Write Pages summary
+        run: |
+          {
+            echo "## Published coverage"
+            echo
+            echo "${{ steps.deployment.outputs.page_url }}coverage/"
+            echo "${{ steps.deployment.outputs.page_url }}coverage.badge.json"
+          } >> "$GITHUB_STEP_SUMMARY"

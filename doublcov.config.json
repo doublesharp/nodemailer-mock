@@ -1,0 +1,7 @@
+{
+  "lcov": "coverage/lcov.info",
+  "out": "coverage/report",
+  "sources": ["src"],
+  "history": ".doublcov/history.json",
+  "name": "nodemailer-mock"
+}
