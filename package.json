@@ -101,10 +101,22 @@
     "mocha": {
       "diff": "~8.0.3",
       "js-yaml": "~4.1.1",
-      "serialize-javascript": "~7.0.3"
+      "serialize-javascript": "~7.0.5"
     },
     "ts-node": {
       "diff": "~4.0.4"
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "@istanbuljs/load-nyc-config>js-yaml": "~3.14.2",
+      "anymatch>picomatch": "~2.3.2",
+      "istanbul-lib-processinfo>uuid": "~14.0.0",
+      "micromatch>picomatch": "~2.3.2",
+      "mocha>diff": "~8.0.3",
+      "mocha>js-yaml": "~4.1.1",
+      "mocha>serialize-javascript": "~7.0.5",
+      "ts-node>diff": "~4.0.4"
     }
   },
   "pre-commit": [
