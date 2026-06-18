@@ -15,9 +15,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["ESNext"],
-    "module": "UMD",
-    "moduleResolution": "node",
+    "module": "node18",
     "outDir": "dist",
+    "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext"
