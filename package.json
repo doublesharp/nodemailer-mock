@@ -59,7 +59,7 @@
     "debug": "^4.4.3"
   },
   "peerDependencies": {
-    "nodemailer": "^6.x || ^7.x || ^8.x"
+    "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
