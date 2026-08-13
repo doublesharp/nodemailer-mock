@@ -1,4 +1,14 @@
 {
   "preset": "ts-jest",
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "transform": {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        "diagnostics": {
+          "ignoreCodes": [151002]
+        }
+      }
+    ]
+  }
 }

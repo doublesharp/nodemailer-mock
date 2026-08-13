@@ -6,7 +6,15 @@ import assert from 'node:assert/strict';
 // We need to register the mock *before* importing any modules that use nodemailer.
 // Use node --experimental-test-module-mocks to enable this feature.
 const nodemailermock = await import('../../dist/nodemailer-mock.js');
-mock.module('nodemailer', { namedExports: nodemailermock });
+const namedExports = Object.fromEntries(
+  Object.entries(nodemailermock).filter(
+    ([name]) => name !== '__esModule' && name !== 'module.exports',
+  ),
+);
+const moduleMockOptions = Number.parseInt(process.versions.node, 10) >= 24
+  ? { exports: namedExports }
+  : { namedExports };
+mock.module('nodemailer', moduleMockOptions);
 
 const mailerTest = await import('../mailer-test.js');
 

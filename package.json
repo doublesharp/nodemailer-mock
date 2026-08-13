@@ -21,7 +21,7 @@
   ],
   "author": "Justin Silver",
   "license": "MIT",
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@11.21.0",
   "bugs": {
     "url": "https://github.com/doublesharp/nodemailer-mock/issues"
   },
@@ -68,46 +68,49 @@
     "@types/debug": "^4.1.13",
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.9.3",
+    "@types/node": "^22.20.1",
     "@types/nodemailer": "^8.x",
-    "@typescript-eslint/eslint-plugin": "^8.61.1",
-    "@typescript-eslint/parser": "^8.61.1",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "chai": "^6.2.2",
-    "eslint": "^10.5.0",
+    "eslint": "^10.8.1",
     "jest": "^30.4.2",
-    "knip": "^6.17.1",
-    "mocha": "^11.7.6",
-    "nodemailer": "~9.0.0",
+    "knip": "^6.32.2",
+    "mocha": "^11.8.0",
+    "nodemailer": "~9.0.5",
     "nyc": "^18.0.0",
     "shx": "^0.4.0",
-    "ts-jest": "^29.4.11",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "overrides": {
-    "@babel/core": "^7.29.6",
+    "@babel/core": "^7.29.7",
     "@istanbuljs/load-nyc-config": {
-      "js-yaml": "^4.2.0"
+      "js-yaml": "^4.3.1"
     },
+    "brace-expansion@1": "~1.1.18",
+    "brace-expansion@2": "~2.1.4",
+    "brace-expansion@5": "~5.0.9",
     "anymatch": {
       "picomatch": "~2.3.2"
     },
     "istanbul-lib-processinfo": {
-      "uuid": "~14.0.0"
+      "uuid": "~14.0.1"
     },
     "micromatch": {
       "picomatch": "~2.3.2"
     },
     "mocha": {
       "diff": "~8.0.3",
-      "js-yaml": "^4.2.0",
-      "serialize-javascript": "~7.0.5"
+      "js-yaml": "^4.3.1",
+      "serialize-javascript": "~7.1.0"
     },
     "ts-node": {
       "diff": "~4.0.4"
     },
-    "vite": "^8.0.16"
+    "vite": "^8.2.1"
   },
   "pre-commit": [
     "lint"
