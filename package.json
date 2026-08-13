@@ -42,7 +42,7 @@
     "pretest": "pnpm run build",
     "test": "mocha -r ts-node/register",
     "nyc": "nyc pnpm run test",
-    "coverage": "pnpm run nyc && pnpm dlx @0xdoublesharp/doublcov@latest build",
+    "coverage": "pnpm run nyc && pnpm exec doublcov build",
     "coverage:noop": "pnpm run coverage -- --no-open",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
@@ -62,6 +62,7 @@
     "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x"
   },
   "devDependencies": {
+    "@0xdoublesharp/doublcov": "0.4.3",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@jest/globals": "^30.4.1",
     "@types/chai": "^5.2.3",

@@ -27,6 +27,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3(supports-color@8.1.1)
     devDependencies:
+      '@0xdoublesharp/doublcov':
+        specifier: 0.4.3
+        version: 0.4.3
       '@istanbuljs/nyc-config-typescript':
         specifier: ^1.0.2
         version: 1.0.2(nyc@18.0.0(supports-color@8.1.1))
@@ -95,6 +98,11 @@ importers:
         version: 4.1.10(@types/node@22.20.1)(vite@8.2.1(@types/node@22.20.1)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
+
+  '@0xdoublesharp/doublcov@0.4.3':
+    resolution: {integrity: sha512-cTZF+I3l8zeo9a1gSsbmj7OzO8i/ycWuWZgB3uy4kgdXb4DR94mbb/Do7nnVsUIqbsVeWn7abzHonk+VdTO9uw==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -2849,6 +2857,8 @@ packages:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
+
+  '@0xdoublesharp/doublcov@0.4.3': {}
 
   '@babel/code-frame@7.29.7':
     dependencies:
