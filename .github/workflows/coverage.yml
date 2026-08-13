@@ -3,7 +3,7 @@ name: Coverage
 on:
   workflow_dispatch:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 permissions:
