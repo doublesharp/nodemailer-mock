@@ -1,7 +1,6 @@
 import Debug from 'debug';
 import * as Nodemailer from 'nodemailer';
 import {
-  createTransport as baseCreateTransport,
   Transport,
   Transporter,
   SentMessageInfo,
@@ -9,19 +8,25 @@ import {
 import Mail from 'nodemailer/lib/mailer';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 
-import { messages } from './lib/messages';
+import { messages, MockSentMessageInfo } from './lib/messages';
+
+export type { MockSentMessageInfo } from './lib/messages';
 
 const debug = Debug('nodemailer-mock');
 
-export type CheckMailMessageOrNull = ((email: MailMessage) => boolean) | null;
-export type NodemailerType = typeof Nodemailer;
+// Reusable plugins must accept different transport result types, including the mock's legacy result.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NodemailerMockPlugin = Mail.PluginFunction<any>;
+export type CheckMailMessageOrNull = ((email: Parameters<NodemailerMockPlugin>[0]) => boolean) | null;
+export type NodemailerType = Pick<typeof Nodemailer, 'createTransport' | 'createTestAccount' | 'getTestMessageUrl'>;
 
 export interface NodemailerMockTransporter
-  extends Transporter<SentMessageInfo> {
+  extends Transporter<MockSentMessageInfo> {
   nodemailermock: NodemailerMocked;
+  use(step: string, plugin: NodemailerMockPlugin): this;
   mock: {
     getPlugins: () => {
-      [key: string]: Mail.PluginFunction<Mail.Options>[];
+      [key: string]: NodemailerMockPlugin[];
     };
     getCloseCallCount: () => number;
     setIdle(isIdle: boolean): void;
@@ -29,15 +34,15 @@ export interface NodemailerMockTransporter
 
   sendMail(
     mailOptions: Mail.Options,
-    callback: (err: Error | null, info: SentMessageInfo) => void
+    callback: (err: Error | null, info: MockSentMessageInfo) => void
   ): void;
-  sendMail(mailOptions: Mail.Options): Promise<SentMessageInfo>;
+  sendMail(mailOptions: Mail.Options): Promise<MockSentMessageInfo>;
 }
 
 export interface NodemailerMock {
   nodemailer: NodemailerType | undefined;
   createTransport: (
-    transport?: Transport | Mail.Options | { [key: string]: unknown },
+    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
     options?: Mail.Options
   ) => NodemailerMockTransporter;
   mock: {
@@ -77,6 +82,7 @@ export class NodemailerMocked implements NodemailerMock {
   private _failResponse = messages.fail_response;
 
   private _transporters: NodemailerMockTransporter[] = [];
+  private _idleTimers = new Set<ReturnType<typeof setTimeout>>();
 
   // Sent mail cache
   private _sentMail: Mail.Options[] = [];
@@ -104,7 +110,7 @@ export class NodemailerMocked implements NodemailerMock {
   }
 
   public createTransport = (
-    transport?: Transport | Mail.Options | { [key: string]: unknown },
+    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
     options?: Mail.Options
   ): NodemailerMockTransporter => {
     // indicate that we are creating a transport
@@ -118,7 +124,7 @@ export class NodemailerMocked implements NodemailerMock {
       transport,
       options
     );
-    const _transporter = new NodemailerMockMail(this, _transport);
+    const _transporter = new NodemailerMockMail(this, _transport, options);
     _transport.nodemailer = _transporter;
     this._transporters.push(_transporter);
     return _transporter;
@@ -129,12 +135,17 @@ export class NodemailerMocked implements NodemailerMock {
      * reset mock values to defaults
      */
     reset: () => {
+      for (const timer of this._idleTimers) {
+        clearTimeout(timer);
+      }
+      this._idleTimers.clear();
       this._sentMail = [];
       this._closeCount = 0;
       this._shouldFail = this._shouldFailOnce = false;
       this._successResponse = messages.success_response;
       this._failResponse = messages.fail_response;
       this._mockedVerify = true;
+      this._mockedClose = true;
       this._shouldFailCheck = null;
       this._shouldUsePlugins = false;
     },
@@ -238,12 +249,14 @@ export class NodemailerMocked implements NodemailerMock {
      * @param timeout the time in ms to wait before setting the transport to idle
      */
     scheduleIsIdle: (isIdle: boolean, timeout: number) => {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        this._idleTimers.delete(timer);
         // iterate over all transporters and set them to idle
         return this._transporters.forEach((transporter) =>
           transporter.mock.setIdle(isIdle)
         );
       }, timeout);
+      this._idleTimers.add(timer);
     },
     /**
      * set the mocked transports to be idle
@@ -271,11 +284,11 @@ export class NodemailerMocked implements NodemailerMock {
   };
 }
 
-export class NodemailerMockTransport implements Transport<SentMessageInfo> {
+export class NodemailerMockTransport implements Transport<MockSentMessageInfo> {
   public nodemailermock: NodemailerMocked;
 
-  public nodemailer: Transporter<Mail.Options> | undefined;
-  public readonly realmailer: Transporter<Mail.Options> | undefined;
+  public nodemailer: Transporter<MockSentMessageInfo> | undefined;
+  public readonly realmailer: Transporter<SentMessageInfo> | undefined;
   public readonly name = 'Nodemailer Mock Transport';
   public readonly version = '0.0.0';
 
@@ -291,16 +304,17 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
       addSentMail: (mail: Mail.Options) => void;
       incrementCloseCallCount: () => void;
     },
-    transport?: Transport | Mail.Options,
+    transport?: Transport | Mail.Options | string,
     options?: Mail.Options
   ) {
     this.nodemailermock = nodemailermock;
     this.handlers = handlers;
 
     // in some mocks the real nodemailer won't be available
+    const mailer = nodemailermock.nodemailer ?? Nodemailer;
     /* istanbul ignore else  */
-    if (typeof baseCreateTransport === 'function') {
-      this.realmailer = baseCreateTransport(transport, options);
+    if (typeof mailer.createTransport === 'function') {
+      this.realmailer = mailer.createTransport(transport ?? {}, options);
     }
   }
 
@@ -311,8 +325,8 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
    * @return {void}
    */
   send(
-    email: MailMessage<SentMessageInfo>,
-    callback: (err: Error | null, info: SentMessageInfo) => void
+    email: MailMessage<MockSentMessageInfo>,
+    callback: (err: Error | null, info: MockSentMessageInfo) => void
   ): void {
     // indicate that sendMail() has been called
     debug('transporter.send', email);
@@ -332,11 +346,12 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
         debug('transporter.send', 'SUCCESS', info);
         // return success
         return callback && callback(null, info);
-      })
-      .catch(() => {
+      }, (error: unknown) => {
         // Reject/Failure
         // update the response
-        info.response = parent.getFailResponse();
+        info.response = error instanceof Error
+          ? error
+          : new Error('Failure check threw a non-Error value', { cause: error });
         // indicate that we are sending an error
         debug('transporter.send', 'FAIL', info.response, info);
         // return the error
@@ -351,9 +366,9 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
    * @throws {Error} if the transport is not ready
    */
   verify(): Promise<true>;
-  verify(callback: (err: Error | null, success: true) => void): void;
+  verify(callback: (err: Error | null, success?: true) => void): void;
   verify(
-    callback?: (err: Error | null, success: true) => void
+    callback?: (err: Error | null, success?: true) => void
   ): Promise<true> | void {
     const { mock: parent } = this.nodemailermock;
     // should we mock the verify request?
@@ -361,15 +376,13 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
     if (!this.realmailer || parent.isMockedVerify()) {
       if (!isPromise) {
         this.determineResponseSuccess()
-          .then((): void => callback && callback(null, true))
-          .catch(
-            (): void => callback && callback(parent.getFailResponse(), true)
+          .then(
+            (): void => callback && callback(null, true),
+            (error: Error): void => callback && callback(error)
           );
         return;
       }
-      return this.determineResponseSuccess()
-        .then((): Promise<true> => Promise.resolve(true))
-        .catch((): Promise<never> => Promise.reject(parent.getFailResponse()));
+      return this.determineResponseSuccess().then((): true => true);
     }
 
     // use the real nodemailer transport to verify
@@ -397,12 +410,12 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
     }
   }
 
-  private async determineResponseSuccess(email?: MailMessage) {
+  private async determineResponseSuccess(email?: MailMessage<MockSentMessageInfo>) {
     const { mock: parent } = this.nodemailermock;
     // if shouldFailCheck defined use it
     const _shouldFailCheck = parent.getShouldFailCheck();
     if (email && _shouldFailCheck && _shouldFailCheck(email)) {
-      throw new Error('nodemailer-mock fail response');
+      throw parent.getFailResponse();
     }
     // determine if we want to return an error
     if (parent.isShouldFail()) {
@@ -411,14 +424,14 @@ export class NodemailerMockTransport implements Transport<SentMessageInfo> {
         parent.setShouldFail(false);
         parent.setShouldFailOnce(false);
       }
-      throw new Error('nodemailer-mock fail response');
+      throw parent.getFailResponse();
     }
     return true;
   }
 }
 
 export class NodemailerMockMail
-  extends Mail<SentMessageInfo>
+  extends Mail<MockSentMessageInfo>
   implements NodemailerMockTransporter
 {
   public mock;
@@ -426,21 +439,22 @@ export class NodemailerMockMail
   public transporter: NodemailerMockTransport;
 
   // transport plugins
-  private _userPluginsDefault: {
-    [key: string | 'compile' | 'stream']: Mail.PluginFunction<Mail.Options>[];
+  private _mockPluginsDefault: {
+    [key: string | 'compile' | 'stream']: NodemailerMockPlugin[];
   } = {
     compile: [],
     stream: [],
   };
 
-  private _userPlugins: Map<string, Mail.PluginFunction<Mail.Options>[]> =
-    new Map(Object.entries(this._userPluginsDefault));
+  private _mockPlugins: Map<string, NodemailerMockPlugin[]> =
+    new Map(Object.entries(this._mockPluginsDefault));
 
   constructor(
     nodemailermock: NodemailerMocked,
-    transport: NodemailerMockTransport
+    transport: NodemailerMockTransport,
+    defaults?: Mail.Options
   ) {
-    super(transport);
+    super(transport, transport.realmailer?.options, defaults);
 
     this.nodemailermock = nodemailermock;
     this.transporter = transport;
@@ -448,9 +462,9 @@ export class NodemailerMockMail
     this.mock = {
       /**
        * get a dictionary of plugins used by this transport
-       * @return {{ [key: string]: Mail.PluginFunction<Mail.Options>[] }} plugins keyed by the step id
+       * @return {{ [key: string]: NodemailerMockPlugin[] }} plugins keyed by the step id
        */
-      getPlugins: () => Object.fromEntries(this._userPlugins),
+      getPlugins: () => Object.fromEntries(this._mockPlugins),
       getCloseCallCount: () => {
         return this.transporter._closeCallCount;
       },
@@ -465,20 +479,23 @@ export class NodemailerMockMail
     };
   }
 
-  use(step: string, plugin: Mail.PluginFunction<Mail.Options>) {
+  use(step: string, plugin: NodemailerMockPlugin) {
     const stepId = (step || '').toString();
-    let plugins = this._userPlugins.get(stepId);
+    let plugins = this._mockPlugins.get(stepId);
     if (typeof plugins !== 'undefined') {
       plugins.push(plugin);
     } else {
       plugins = [plugin];
     }
-    this._userPlugins.set(stepId, plugins);
+    this._mockPlugins.set(stepId, plugins);
 
-    if (this.nodemailermock.mock.isUnmockedUsePlugins()) {
-      return super.use(step, plugin);
-    }
-    return this;
+    return super.use(step, (mail, callback) => {
+      if (this.nodemailermock.mock.isUnmockedUsePlugins()) {
+        plugin(mail, callback);
+      } else {
+        callback();
+      }
+    });
   }
 }
 

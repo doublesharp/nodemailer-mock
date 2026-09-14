@@ -20,6 +20,7 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
+    "types": ["node"],
     "target": "ESNext"
   }
 }

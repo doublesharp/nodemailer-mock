@@ -28,6 +28,7 @@ build/Release
 
 # Dependency directories
 node_modules
+.pnpm-store
 jspm_packages
 
 # Optional npm cache directory
@@ -42,6 +43,8 @@ jspm_packages
 .doublcov
 
 .github
+docs
+CONTRIBUTING.md
 src
 mjs
 examples
@@ -56,4 +59,6 @@ jest.config.json
 knip.json
 nyc.config.js
 pnpm-lock.yaml
+pnpm-workspace.yaml
 tsconfig.json
+tsconfig.type-tests.json

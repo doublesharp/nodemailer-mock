@@ -13,6 +13,7 @@
   "ignoreFiles": ["mjs/nodemailer-mock.mjs"],
   "ignoreDependencies": ["@types/mocha"],
   "ignoreIssues": {
-    "src/nodemailer-mock.ts": ["duplicates"]
+    "src/nodemailer-mock.ts": ["duplicates"],
+    "examples/mailer-test.ts": ["duplicates"]
   }
 }
