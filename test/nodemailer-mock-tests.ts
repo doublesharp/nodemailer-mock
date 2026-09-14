@@ -1,6 +1,8 @@
 'use strict';
 
 import { expect } from 'chai';
+import { mock as nodeMock } from 'node:test';
+import { rejects } from 'node:assert/strict';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 import * as nodemailer from 'nodemailer';
 import * as mocked from '../src/nodemailer-mock';
@@ -20,6 +22,36 @@ describe('Testing nodemailer-mock...', () => {
   });
 
   describe('module loading', () => {
+    it('should create real transports through the supplied nodemailer instance', async () => {
+      const calls: unknown[][] = [];
+      let verifyCalls = 0;
+      let closeCalls = 0;
+      const suppliedMailer = {
+        ...nodemailer,
+        createTransport: (...args: unknown[]) => {
+          calls.push(args);
+          return nodemailer.createTransport({
+            name: 'supplied transport',
+            version: '1.0.0',
+            send: () => { throw new Error('Unexpected real send'); },
+            verify: async () => { verifyCalls++; return true; },
+            close: () => { closeCalls++; },
+          });
+        },
+      };
+      const testMock = mocked.getMockFor(suppliedMailer);
+      const config = { jsonTransport: true };
+      const defaults = { from: 'sender@example.com' };
+      const transport = testMock.createTransport(config, defaults);
+      expect(calls).to.deep.equal([[config, defaults]]);
+      testMock.mock.setMockedVerify(false);
+      testMock.mock.setMockedClose(false);
+      expect(await transport.verify()).to.equal(true);
+      transport.close();
+      expect(verifyCalls).to.equal(1);
+      expect(closeCalls).to.equal(1);
+    });
+
     it('should let you create a mock using the real nodemailer using getMockFor(nodemailer)', async () => {
       // it's the real one...
       expect(nodemailer).to.not.have.property('mock');
@@ -35,10 +67,197 @@ describe('Testing nodemailer-mock...', () => {
       expect(typeof testMock).to.not.equal('undefined');
       // it's the mock one...
       expect(testMock).to.have.property('mock');
+      await testMock.createTransport().sendMail({ subject: 'Default module' });
+      expect(testMock.mock.getSentMail()[0].subject).to.equal('Default module');
     });
   });
 
   describe('nodemailer functionality', () => {
+    it('should enable previously registered plugins and disable them on reset', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport();
+      let runs = 0;
+      const plugin = (_mail: MailMessage, done: () => void) => { runs++; done(); };
+      transport.use('compile', plugin);
+      await transport.sendMail({});
+      expect(runs).to.equal(0);
+      testMock.mock.setUnmockedUsePlugins(true);
+      await transport.sendMail({});
+      expect(runs).to.equal(1);
+      testMock.mock.setUnmockedUsePlugins(false);
+      await transport.sendMail({});
+      expect(runs).to.equal(1);
+      testMock.mock.setUnmockedUsePlugins(true);
+      await transport.sendMail({});
+      expect(runs).to.equal(2);
+      testMock.mock.reset();
+      await transport.sendMail({});
+      expect(runs).to.equal(2);
+      expect(transport.mock.getPlugins().compile).to.deep.equal([plugin]);
+    });
+
+    it('should stop plugins registered while enabled after reset', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport();
+      let runs = 0;
+      testMock.mock.setUnmockedUsePlugins(true);
+      transport.use('compile', (_mail, done) => { runs++; done(); });
+      await transport.sendMail({});
+      expect(runs).to.equal(1);
+      testMock.mock.reset();
+      await transport.sendMail({});
+      expect(runs).to.equal(1);
+    });
+
+    it('should not report successful verification alongside an error', (done) => {
+      const testMock = mocked.getMockFor(nodemailer);
+      testMock.mock.setShouldFail(true);
+      testMock.createTransport().verify((error, success) => {
+        try {
+          expect(error).to.equal(messages.fail_response);
+          expect(success).to.equal(undefined);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      });
+    });
+
+    it('should preserve exceptions thrown by a failure check in the callback API', (done) => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const original = new TypeError('Failure check bug');
+      testMock.mock.setShouldFailCheck(() => { throw original; });
+      testMock.createTransport().sendMail({}, (error, info) => {
+        try {
+          expect(error).to.equal(original);
+          expect(info.response).to.equal(original);
+          expect(testMock.mock.getSentMail()).to.have.length(0);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      });
+    });
+
+    it('should preserve exceptions thrown by a failure check in the promise API', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const original = new TypeError('Failure check bug');
+      testMock.mock.setShouldFailCheck(() => { throw original; });
+      let caught: unknown;
+      try {
+        await testMock.createTransport().sendMail({});
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).to.equal(original);
+      expect(testMock.mock.getSentMail()).to.have.length(0);
+    });
+
+    it('should reject even when a failure check throws a falsy value', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport();
+      for (const value of [undefined, null, false, 0, '']) {
+        testMock.mock.setShouldFailCheck(() => { throw value; });
+        await rejects(transport.sendMail({}), (error: unknown) => {
+          return error instanceof Error && error.cause === value;
+        });
+      }
+      expect(testMock.mock.getSentMail()).to.have.length(0);
+    });
+
+    it('should run built-in compile plugins without registering user plugins', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      await testMock.createTransport().sendMail({
+        attachDataUrls: true,
+        html: '<img src="data:image/png;base64,aGVsbG8=">',
+      });
+      const mail = testMock.mock.getSentMail()[0];
+      expect(mail.html).to.contain('cid:');
+      expect(mail.attachments).to.have.length(1);
+      expect(mail.attachments?.[0].content?.toString()).to.equal('hello');
+    });
+
+    it('should retain access restrictions from transport configuration', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport({ disableFileAccess: true, disableUrlAccess: true });
+      await transport.sendMail({ disableFileAccess: false, disableUrlAccess: false });
+      expect(testMock.mock.getSentMail()[0]).to.include({ disableFileAccess: true, disableUrlAccess: true });
+    });
+
+    it('should cancel scheduled idle changes on reset', () => {
+      nodeMock.timers.enable({ apis: ['setTimeout'] });
+      try {
+        const testMock = mocked.getMockFor(nodemailer);
+        const first = testMock.createTransport();
+        let idleEvents = 0;
+        first.on('idle', () => { idleEvents++; });
+        testMock.mock.scheduleIsIdle(true, 10);
+        testMock.mock.reset();
+        const second = testMock.createTransport();
+        nodeMock.timers.tick(10);
+        expect(first.isIdle()).to.equal(false);
+        expect(second.isIdle()).to.equal(false);
+        expect(idleEvents).to.equal(0);
+        testMock.mock.scheduleIsIdle(true, 20);
+        nodeMock.timers.tick(20);
+        expect(first.isIdle()).to.equal(true);
+        expect(second.isIdle()).to.equal(true);
+        expect(idleEvents).to.equal(1);
+      } finally {
+        nodeMock.timers.reset();
+      }
+    });
+
+    it('should create a transport without options', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport();
+      const info = await transport.sendMail({ subject: 'No transport options' });
+      expect(info.response).to.equal(messages.success_response);
+      expect(testMock.mock.getSentMail()).to.have.length(1);
+      expect(testMock.mock.getSentMail()[0]).to.include({ subject: 'No transport options' });
+    });
+
+    it('should accept SMTP connection URLs', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const transport = testMock.createTransport('smtp://localhost:2525');
+      await transport.sendMail({ subject: 'URL transport' });
+      expect(transport.options).to.include({ host: 'localhost', port: 2525 });
+      expect(testMock.mock.getSentMail()[0].subject).to.equal('URL transport');
+    });
+
+    it('should apply message defaults and allow per-message overrides', async () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      const defaults = { from: 'sender@example.com', subject: 'Default subject' };
+      const transport = testMock.createTransport({ jsonTransport: true }, defaults);
+      await transport.sendMail({ to: 'recipient@example.com' });
+      await transport.sendMail({ to: 'recipient@example.com', subject: 'Override' });
+      expect(testMock.mock.getSentMail().map(({ from, to, subject }) => ({ from, to, subject }))).to.deep.equal([
+        { ...defaults, to: 'recipient@example.com' },
+        { ...defaults, to: 'recipient@example.com', subject: 'Override' },
+      ]);
+      expect(defaults).to.deep.equal({ from: 'sender@example.com', subject: 'Default subject' });
+    });
+
+    it('should restore mocked close behavior on reset', () => {
+      const testMock = mocked.getMockFor(nodemailer);
+      let realCloseCalls = 0;
+      const transport = testMock.createTransport({
+        name: 'close regression',
+        version: '1.0.0',
+        send: () => { throw new Error('Unexpected real send'); },
+        close: () => { realCloseCalls++; },
+      });
+      testMock.mock.setMockedClose(false);
+      transport.close();
+      expect(realCloseCalls).to.equal(1);
+      testMock.mock.reset();
+      expect(testMock.mock.isMockedClose()).to.equal(true);
+      transport.close();
+      expect(realCloseCalls).to.equal(1);
+      expect(testMock.mock.getCloseCallCount()).to.equal(1);
+      expect(transport.mock.getCloseCallCount()).to.equal(2);
+    });
+
     it('should allow plugins to be added', async () => {
       // const mail = new MailMessage(transport, { subject: 'test' });
       // try to add a plugin, twice for coverage;

@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "2.0.14",
+  "version": "2.1.0",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications.",
   "repository": {
     "type": "git",
@@ -45,7 +45,7 @@
     "coverage": "pnpm run nyc && pnpm exec doublcov build",
     "coverage:noop": "pnpm run coverage -- --no-open",
     "lint": "eslint . --ext .ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm run build && tsc --noEmit && tsc -p tsconfig.type-tests.json",
     "knip": "knip",
     "quality": "pnpm run lint && pnpm run typecheck && pnpm run knip",
     "inspect": "NODE_ENV=test pnpm run test -- -s 0 --inspect --debug-brk",
@@ -59,37 +59,37 @@
     "debug": "^4.4.3"
   },
   "peerDependencies": {
-    "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x"
+    "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x || ^10.x"
   },
   "devDependencies": {
-    "@0xdoublesharp/doublcov": "0.4.3",
+    "@0xdoublesharp/doublcov": "0.4.4",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@jest/globals": "^30.4.1",
+    "@jest/globals": "^30.5.1",
     "@types/chai": "^5.2.3",
     "@types/debug": "^4.1.13",
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.1",
     "@types/nodemailer": "^8.x",
-    "@typescript-eslint/eslint-plugin": "^8.67.0",
-    "@typescript-eslint/parser": "^8.67.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
     "chai": "^6.2.2",
-    "eslint": "^10.8.1",
-    "jest": "^30.4.2",
-    "knip": "^6.32.2",
-    "mocha": "^11.8.0",
-    "nodemailer": "~9.0.5",
+    "eslint": "^10.10.0",
+    "jest": "^30.5.1",
+    "knip": "^6.35.1",
+    "mocha": "^12.0.1",
+    "nodemailer": "~10.0.9",
     "nyc": "^18.0.0",
     "shx": "^0.4.0",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   },
   "overrides": {
     "@babel/core": "^7.29.7",
     "@istanbuljs/load-nyc-config": {
-      "js-yaml": "^4.3.1"
+      "js-yaml": "^4.3.2"
     },
     "brace-expansion@1": "~1.1.18",
     "brace-expansion@2": "~2.1.4",
@@ -102,11 +102,6 @@
     },
     "micromatch": {
       "picomatch": "~2.3.2"
-    },
-    "mocha": {
-      "diff": "~8.0.3",
-      "js-yaml": "^4.3.1",
-      "serialize-javascript": "~7.1.0"
     },
     "ts-node": {
       "diff": "~4.0.4"
