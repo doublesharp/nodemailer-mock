@@ -17,8 +17,6 @@ on:
       - 'src/*'
       - 'src/**/*'
   pull_request:
-    paths:
-      - '!*.MD'
 jobs:
   test:
     strategy:

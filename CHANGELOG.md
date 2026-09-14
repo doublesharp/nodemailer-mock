@@ -51,7 +51,8 @@ for TypeScript annotations and changes to mock behavior.
 - Exclude development documentation and pnpm workspace configuration from the npm
   package, retaining the README, changelog, and license.
 - Refresh dependencies and overrides to address reported security advisories.
-- Run quality checks and all examples in the Node.js 22 and 24 CI matrix.
+- Run quality checks and all examples in the Node.js 22 and 24 CI matrix, and
+  ensure that matrix runs for every pull request.
 - Document mock result types, defaults, plugin controls, and reset behavior.
 
 ## [2.0.14](https://github.com/doublesharp/nodemailer-mock/commit/57865b2f00309214c19ce8a14d78c2a512a66b10) - 2026-08-13
