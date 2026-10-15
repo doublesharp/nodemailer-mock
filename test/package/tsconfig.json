@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "node18",
+    "target": "ESNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": false,
+    "noEmit": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "*.cts",
+    "*.mts"
+  ]
+}
