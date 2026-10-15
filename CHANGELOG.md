@@ -11,7 +11,7 @@ for 2.0.11 and 2.0.14 also include follow-up commits present in their release ta
 
 ## Unreleased
 
-## [2.2.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.1.0...v2.2.0) - 2026-10-14
+## [2.2.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.1.0...v2.2.0) - 2026-10-15
 
 See the [upgrade notes](https://github.com/doublesharp/nodemailer-mock/blob/v2.2.0/docs/releases/2.2.0.md)
 for the optional response configuration and reset boundaries.
