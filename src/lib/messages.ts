@@ -10,6 +10,16 @@ export interface MockSentMessageInfo {
   response: string | Error;
 }
 
+export interface RealisticMockSentMessageInfo extends Omit<MockSentMessageInfo, 'envelope'> {
+  envelope: { from: string; to: string[] };
+}
+
+export type MockResponseMode = 'legacy' | 'realistic';
+export type MockInfo<Mode extends MockResponseMode = 'legacy'> =
+  Mode extends 'realistic' ? RealisticMockSentMessageInfo : MockSentMessageInfo;
+
+export const createFailResponse = () => new Error('nodemailer-mock failure');
+
 const successResponse = 'nodemailer-mock success';
 
 export const messages: {
@@ -18,7 +28,7 @@ export const messages: {
   readonly info: () => MockSentMessageInfo;
 } = {
   success_response: successResponse,
-  fail_response: new Error('nodemailer-mock failure'),
+  fail_response: createFailResponse(),
   info: (): MockSentMessageInfo => {
     const messageId = randomBytes(24).toString('hex');
     return {
