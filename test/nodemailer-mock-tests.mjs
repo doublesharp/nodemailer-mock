@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import * as nodemailer from 'nodemailer';
 import * as mocked from '../dist/nodemailer-mock.mjs';
+import * as publicModule from 'nodemailer-mock';
 
 import { getMockFor } from '../dist/nodemailer-mock.mjs';
 
@@ -35,6 +36,23 @@ describe('callback exceptions', () => {
 
 describe('Test MJS', () => {
   describe('module loading', () => {
+    it('should expose a default export from the advertised module wrapper', () => {
+      const commonjs = createRequire(import.meta.url)('nodemailer-mock');
+      expect(mocked.default).to.equal(commonjs);
+      expect(mocked.default.getMockFor).to.equal(getMockFor);
+      expect(mocked.default.mock).to.equal(mocked.mock);
+    });
+
+    it('should resolve native package imports through the ESM wrapper', () => {
+      expect(import.meta.resolve('nodemailer-mock')).to.equal(
+        new URL('../dist/nodemailer-mock.mjs', import.meta.url).href,
+      );
+      expect(publicModule.default).to.equal(mocked.default);
+      expect(publicModule.mock).to.equal(mocked.mock);
+      expect(publicModule.mocked).to.equal(mocked.mocked);
+      expect(publicModule.createTransport).to.equal(mocked.createTransport);
+    });
+
     it('should allow loading as an ES module', async () => {
       // load the mock using the real one
       const testMock = mocked.getMockFor(nodemailer);

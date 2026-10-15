@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import * as Nodemailer from 'nodemailer';
 import {
   Transport,
@@ -8,9 +9,10 @@ import {
 import Mail from 'nodemailer/lib/mailer';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 
-import { messages, MockSentMessageInfo } from './lib/messages';
+import { messages, createFailResponse, MockInfo, MockResponseMode } from './lib/messages';
+import { copyInfo, createInfo } from './lib/response';
 
-export type { MockSentMessageInfo } from './lib/messages';
+export type { MockSentMessageInfo, RealisticMockSentMessageInfo, MockInfo, MockResponseMode } from './lib/messages';
 
 const debug = Debug('nodemailer-mock');
 
@@ -19,10 +21,37 @@ const debug = Debug('nodemailer-mock');
 export type NodemailerMockPlugin = Mail.PluginFunction<any>;
 export type CheckMailMessageOrNull = ((email: Parameters<NodemailerMockPlugin>[0]) => boolean) | null;
 export type NodemailerType = Pick<typeof Nodemailer, 'createTransport' | 'createTestAccount' | 'getTestMessageUrl'>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NodemailerMockTransportInput = Transport<any> | Mail.Options | { [key: string]: unknown } | string;
 
-export interface NodemailerMockTransporter
-  extends Transporter<MockSentMessageInfo> {
-  nodemailermock: NodemailerMocked;
+export type MockOptions<Mode extends MockResponseMode = 'legacy'> = {
+  responseMode?: Mode;
+  messageIdGenerator?: () => string;
+} & ('legacy' extends Mode ? unknown : { responseMode: Mode });
+
+// Keep optional legacy arguments while requiring the discriminator for realistic results.
+type MockArguments<Mode extends MockResponseMode> =
+  [mailer?: NodemailerType, options?: MockOptions<Mode>] &
+  ('legacy' extends Mode ? unknown : [mailer: NodemailerType | undefined, options: MockOptions<Mode>]);
+
+export interface MockResetOptions {
+  clearTransporters?: boolean;
+}
+
+export type MockQueuedResult<Mode extends MockResponseMode = 'legacy'> =
+  { error: Error; info?: never } | { error?: never; info?: Partial<MockInfo<Mode>> };
+
+interface SendContext<Mode extends MockResponseMode> {
+  generation: number;
+  outcome?: MockQueuedResult<Mode>;
+}
+
+// A shared async scope avoids retaining one AsyncLocalStorage instance per transporter.
+const sendInvocation = new AsyncLocalStorage<SendContext<MockResponseMode>>();
+
+export interface NodemailerMockTransporter<Mode extends MockResponseMode = 'legacy'>
+  extends Transporter<MockInfo<Mode>> {
+  nodemailermock: NodemailerMocked<Mode>;
   use(step: string, plugin: NodemailerMockPlugin): this;
   mock: {
     getPlugins: () => {
@@ -34,20 +63,22 @@ export interface NodemailerMockTransporter
 
   sendMail(
     mailOptions: Mail.Options,
-    callback: (err: Error | null, info: MockSentMessageInfo) => void
+    callback: (err: Error | null, info: MockInfo<Mode>) => void
   ): void;
-  sendMail(mailOptions: Mail.Options): Promise<MockSentMessageInfo>;
+  sendMail(mailOptions: Mail.Options): Promise<MockInfo<Mode>>;
 }
 
-export interface NodemailerMock {
+export interface NodemailerMock<Mode extends MockResponseMode = 'legacy'> {
   nodemailer: NodemailerType | undefined;
   createTransport: (
-    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
-  ) => NodemailerMockTransporter;
+  ) => NodemailerMockTransporter<Mode>;
   mock: {
-    reset: () => void;
-    getTransporters: () => NodemailerMockTransporter[];
+    reset: (options?: MockResetOptions) => void;
+    setSentMessageInfo: (info: Partial<MockInfo<Mode>>) => void;
+    queueResult: (result: MockQueuedResult<Mode>) => void;
+    getTransporters: () => NodemailerMockTransporter<Mode>[];
     getSentMail: () => Mail.Options[];
     getCloseCallCount: () => number;
     setShouldFailOnce: (isSet?: boolean) => void;
@@ -71,7 +102,7 @@ export interface NodemailerMock {
   };
 }
 
-export class NodemailerMocked implements NodemailerMock {
+export class NodemailerMocked<Mode extends MockResponseMode = 'legacy'> implements NodemailerMock<Mode> {
   public nodemailer: NodemailerType | undefined;
 
   private _mockedVerify = true;
@@ -79,9 +110,14 @@ export class NodemailerMocked implements NodemailerMock {
 
   // our response messages
   private _successResponse = messages.success_response;
-  private _failResponse = messages.fail_response;
+  private _failResponse = createFailResponse();
 
-  private _transporters: NodemailerMockTransporter[] = [];
+  private _transporters: NodemailerMockMail<Mode>[] = [];
+  private _generation = 0;
+  private _queue: MockQueuedResult<Mode>[] = [];
+  private _sentMessageInfo: Partial<MockInfo<Mode>> = {};
+  private readonly _messageIdGenerator?: () => string;
+  private readonly _responseMode: MockResponseMode;
   private _idleTimers = new Set<ReturnType<typeof setTimeout>>();
 
   // Sent mail cache
@@ -94,8 +130,11 @@ export class NodemailerMocked implements NodemailerMock {
   private _shouldFailCheck: CheckMailMessageOrNull = null;
   private _shouldUsePlugins = false;
 
-  constructor(mailer?: NodemailerType) {
+  constructor(...args: MockArguments<Mode>) {
+    const [mailer, options] = args;
     this.nodemailer = mailer;
+    this._responseMode = options?.responseMode ?? 'legacy';
+    this._messageIdGenerator = options?.messageIdGenerator;
 
     // legacy aliases
     Object.assign(this.mock, {
@@ -110,15 +149,27 @@ export class NodemailerMocked implements NodemailerMock {
   }
 
   public createTransport = (
-    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
-  ): NodemailerMockTransporter => {
+  ): NodemailerMockTransporter<Mode> => {
     // indicate that we are creating a transport
     debug('createTransport', options);
     const _transport = new NodemailerMockTransport(
       this,
       {
-        addSentMail: (mail) => this._sentMail.push(mail),
+        beginSend: () => ({ generation: this._generation, outcome: this._queue.shift() }),
+        createInfo: (email) => createInfo(email, this._responseMode, this._successResponse),
+        configureInfo: (info, overrides) => {
+          if (this._messageIdGenerator) info.messageId = this._messageIdGenerator();
+          return { ...info, ...copyInfo(this._sentMessageInfo), ...copyInfo(overrides ?? {}) };
+        },
+        failureInfo: (info) => {
+          if (this._messageIdGenerator) info.messageId = this._messageIdGenerator();
+          return info;
+        },
+        addSentMail: (mail, generation) => {
+          if (generation === this._generation) this._sentMail.push(mail);
+        },
         incrementCloseCallCount: () => this._closeCount++,
       },
       transport,
@@ -132,9 +183,22 @@ export class NodemailerMocked implements NodemailerMock {
 
   public mock = {
     /**
-     * reset mock values to defaults
+     * Reset behavior and history, preserving factory response configuration.
+     * clearTransporters also drops the registry, listeners, and transporter-local counts/idle state.
+     * Held transporters and their plugins remain reusable; real transports are not closed.
      */
-    reset: () => {
+    reset: (options: MockResetOptions = {}) => {
+      this._generation++;
+      this._queue = [];
+      this._sentMessageInfo = {};
+      if (options.clearTransporters) {
+        for (const transporter of this._transporters) {
+          transporter.removeAllListeners();
+          transporter.transporter._closeCallCount = 0;
+          transporter.transporter._isIdle = false;
+        }
+        this._transporters = [];
+      }
       for (const timer of this._idleTimers) {
         clearTimeout(timer);
       }
@@ -143,11 +207,17 @@ export class NodemailerMocked implements NodemailerMock {
       this._closeCount = 0;
       this._shouldFail = this._shouldFailOnce = false;
       this._successResponse = messages.success_response;
-      this._failResponse = messages.fail_response;
+      this._failResponse = createFailResponse();
       this._mockedVerify = true;
       this._mockedClose = true;
       this._shouldFailCheck = null;
       this._shouldUsePlugins = false;
+    },
+    setSentMessageInfo: (info: Partial<MockInfo<Mode>>) => {
+      this._sentMessageInfo = copyInfo(info);
+    },
+    queueResult: (result: MockQueuedResult<Mode>) => {
+      this._queue.push(result.error ? { error: result.error } : { info: copyInfo(result.info ?? {}) });
     },
     /**
      * the transporters that have been created by this mock
@@ -284,27 +354,41 @@ export class NodemailerMocked implements NodemailerMock {
   };
 }
 
-export class NodemailerMockTransport implements Transport<MockSentMessageInfo> {
-  public nodemailermock: NodemailerMocked;
+export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> implements Transport<MockInfo<Mode>> {
+  public nodemailermock: NodemailerMocked<Mode>;
 
-  public nodemailer: Transporter<MockSentMessageInfo> | undefined;
+  public nodemailer: Transporter<MockInfo<Mode>> | undefined;
   public readonly realmailer: Transporter<SentMessageInfo> | undefined;
   public readonly name = 'Nodemailer Mock Transport';
   public readonly version = '0.0.0';
 
   // handlers passed from the mock to the transport
   private handlers;
+  private readonly _sends = new WeakMap<MailMessage<MockInfo<Mode>>, SendContext<Mode>>();
+
+  public withSendContext<T>(send: () => T): T {
+    return sendInvocation.run(this.handlers.beginSend(), send);
+  }
+
+  public captureSend(email: MailMessage<MockInfo<Mode>>): void {
+    const context = sendInvocation.getStore() as SendContext<Mode> | undefined;
+    if (context) this._sends.set(email, context);
+  }
 
   public _isIdle = false;
   public _closeCallCount = 0;
 
   constructor(
-    nodemailermock: NodemailerMocked,
+    nodemailermock: NodemailerMocked<Mode>,
     handlers: {
-      addSentMail: (mail: Mail.Options) => void;
+      beginSend: () => SendContext<Mode>;
+      createInfo: (email: MailMessage<MockInfo<Mode>>) => MockInfo<Mode>;
+      configureInfo: (info: MockInfo<Mode>, overrides?: Partial<MockInfo<Mode>>) => MockInfo<Mode>;
+      failureInfo: (info: MockInfo<Mode>) => MockInfo<Mode>;
+      addSentMail: (mail: Mail.Options, generation: number) => void;
       incrementCloseCallCount: () => void;
     },
-    transport?: Transport | Mail.Options | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
   ) {
     this.nodemailermock = nodemailermock;
@@ -325,38 +409,40 @@ export class NodemailerMockTransport implements Transport<MockSentMessageInfo> {
    * @return {void}
    */
   send(
-    email: MailMessage<MockSentMessageInfo>,
-    callback: (err: Error | null, info: MockSentMessageInfo) => void
+    email: MailMessage<MockInfo<Mode>>,
+    callback: (err: Error | null, info: MockInfo<Mode>) => void
   ): void {
     // indicate that sendMail() has been called
     debug('transporter.send', email);
-    // start with a basic info object
-    const info = messages.info();
+    const context = this._sends.get(email) ?? this.handlers.beginSend();
+    this._sends.delete(email);
+    let info = this.handlers.createInfo(email);
+    const outcome = context.outcome;
+    const response = outcome
+      ? (outcome.error ? Promise.reject(outcome.error) : Promise.resolve(true))
+      : this.determineResponseSuccess(email);
 
-    const { mock: parent } = this.nodemailermock;
-
-    this.determineResponseSuccess(email)
-      .then(() => {
-        // Resolve/Success
-        // add the email to our cache
-        this.handlers.addSentMail(email.data);
-        // update the response
-        info.response = parent.getSuccessResponse();
-        // indicate that we are sending success
-        debug('transporter.send', 'SUCCESS', info);
-        // return success
-        return callback && callback(null, info);
-      }, (error: unknown) => {
-        // Reject/Failure
-        // update the response
-        info.response = error instanceof Error
-          ? error
-          : new Error('Failure check threw a non-Error value', { cause: error });
-        // indicate that we are sending an error
-        debug('transporter.send', 'FAIL', info.response, info);
-        // return the error
-        return callback && callback(info.response, info);
-      });
+    response.then(() => {
+      info = this.handlers.configureInfo(info, outcome?.info);
+      this.handlers.addSentMail(email.data, context.generation);
+      return info;
+    }, (error: unknown) => {
+      try {
+        info = this.handlers.failureInfo(info);
+      } catch {
+        // A result generator must not replace the selected send error.
+      }
+      throw error;
+    }).then((result) => {
+      debug('transporter.send', 'SUCCESS', result);
+      return callback && callback(null, result);
+    }, (error: unknown) => {
+      info.response = error instanceof Error
+        ? error
+        : new Error('Failure check threw a non-Error value', { cause: error });
+      debug('transporter.send', 'FAIL', info.response, info);
+      return callback && callback(info.response, info);
+    });
   }
 
   /**
@@ -410,7 +496,7 @@ export class NodemailerMockTransport implements Transport<MockSentMessageInfo> {
     }
   }
 
-  private async determineResponseSuccess(email?: MailMessage<MockSentMessageInfo>) {
+  private async determineResponseSuccess(email?: MailMessage<MockInfo<Mode>>) {
     const { mock: parent } = this.nodemailermock;
     // if shouldFailCheck defined use it
     const _shouldFailCheck = parent.getShouldFailCheck();
@@ -430,13 +516,13 @@ export class NodemailerMockTransport implements Transport<MockSentMessageInfo> {
   }
 }
 
-export class NodemailerMockMail
-  extends Mail<MockSentMessageInfo>
-  implements NodemailerMockTransporter
+export class NodemailerMockMail<Mode extends MockResponseMode = 'legacy'>
+  extends Mail<MockInfo<Mode>>
+  implements NodemailerMockTransporter<Mode>
 {
   public mock;
-  public nodemailermock: NodemailerMocked;
-  public transporter: NodemailerMockTransport;
+  public nodemailermock: NodemailerMocked<Mode>;
+  public transporter: NodemailerMockTransport<Mode>;
 
   // transport plugins
   private _mockPluginsDefault: {
@@ -450,14 +536,19 @@ export class NodemailerMockMail
     new Map(Object.entries(this._mockPluginsDefault));
 
   constructor(
-    nodemailermock: NodemailerMocked,
-    transport: NodemailerMockTransport,
+    nodemailermock: NodemailerMocked<Mode>,
+    transport: NodemailerMockTransport<Mode>,
     defaults?: Mail.Options
   ) {
     super(transport, transport.realmailer?.options, defaults);
 
     this.nodemailermock = nodemailermock;
     this.transporter = transport;
+    // This plugin runs before user plugins, including plugins whose callbacks resume outside the async context.
+    super.use('compile', (email, done) => {
+      transport.captureSend(email);
+      done();
+    });
 
     this.mock = {
       /**
@@ -477,6 +568,17 @@ export class NodemailerMockMail
         }
       },
     };
+  }
+
+  sendMail(mailOptions: Mail.Options, callback: (err: Error | null, info: MockInfo<Mode>) => void): void;
+  sendMail(mailOptions: Mail.Options): Promise<MockInfo<Mode>>;
+  sendMail(
+    mailOptions: Mail.Options,
+    callback?: (err: Error | null, info: MockInfo<Mode>) => void
+  ): Promise<MockInfo<Mode>> | void {
+    return this.transporter.withSendContext(() => callback
+      ? super.sendMail(mailOptions, callback)
+      : super.sendMail(mailOptions));
   }
 
   use(step: string, plugin: NodemailerMockPlugin) {
@@ -505,8 +607,10 @@ export const mocked = new NodemailerMocked(Nodemailer);
 // expose the mock functions
 export const { createTransport, mock, nodemailer } = mocked;
 // use this to pass in a real nodemailer instance
-export const getMockFor = (nodemailer?: NodemailerType) => {
-  return new NodemailerMocked(nodemailer);
+export const getMockFor = <Mode extends MockResponseMode = 'legacy'>(
+  ...args: MockArguments<Mode>
+) => {
+  return new NodemailerMocked<Mode>(...args);
 };
 
 export default mocked;

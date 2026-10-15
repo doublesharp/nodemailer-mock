@@ -2,13 +2,17 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
     "test/**/*.{ts,mjs}",
-    "examples/**/*.{js,ts,mjs}"
+    "examples/**/*.{js,ts,mjs}",
+    "scripts/**/*.mjs",
+    "test/package/**/*.{cts,mts,mjs}"
   ],
   "project": [
     "src/**/*.ts",
     "test/**/*.{ts,mjs}",
     "examples/**/*.{js,ts,mjs}",
-    "mjs/**/*.mjs"
+    "mjs/**/*.mjs",
+    "scripts/**/*.mjs",
+    "test/package/**/*.{cts,mts,mjs}"
   ],
   "ignoreFiles": ["mjs/nodemailer-mock.mjs"],
   "ignoreDependencies": ["@types/mocha"],

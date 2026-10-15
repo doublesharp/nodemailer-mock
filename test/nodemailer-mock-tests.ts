@@ -114,7 +114,7 @@ describe('Testing nodemailer-mock...', () => {
       testMock.mock.setShouldFail(true);
       testMock.createTransport().verify((error, success) => {
         try {
-          expect(error).to.equal(messages.fail_response);
+          expect(error).to.equal(testMock.mock.getFailResponse());
           expect(success).to.equal(undefined);
           done();
         } catch (error) {
@@ -438,8 +438,8 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject',
         },
         (err1, info1) => {
-          expect(err1).to.equal(messages.fail_response);
-          expect(info1 && info1.response).to.equal(messages.fail_response);
+          expect(err1).to.equal(mocked.mock.getFailResponse());
+          expect(info1 && info1.response).to.equal(mocked.mock.getFailResponse());
 
           // Send an email that should succeed
           transporter.sendMail(
@@ -466,8 +466,8 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'Subject 1',
         },
         (err1, info1) => {
-          expect(err1).equal(messages.fail_response);
-          expect(info1 && info1.response).to.equal(messages.fail_response);
+          expect(err1).equal(mocked.mock.getFailResponse());
+          expect(info1 && info1.response).to.equal(mocked.mock.getFailResponse());
 
           // Send another email that should fail
           transporter.sendMail(
@@ -475,8 +475,8 @@ describe('Testing nodemailer-mock...', () => {
               subject: 'Subject 2',
             },
             (err2, info2) => {
-              expect(err2).equal(messages.fail_response);
-              expect(info2 && info2.response).to.equal(messages.fail_response);
+              expect(err2).equal(mocked.mock.getFailResponse());
+              expect(info2 && info2.response).to.equal(mocked.mock.getFailResponse());
 
               // tell the mock to succeed when sending
               mocked.mock.setShouldFail(false);
@@ -513,8 +513,8 @@ describe('Testing nodemailer-mock...', () => {
           subject: 'FailMe',
         },
         (err1, info1) => {
-          expect(err1).equal(messages.fail_response);
-          expect(info1 && info1.response).to.equal(messages.fail_response);
+          expect(err1).equal(mocked.mock.getFailResponse());
+          expect(info1 && info1.response).to.equal(mocked.mock.getFailResponse());
 
           // Send an email that should succeed
           transporter.sendMail(
@@ -583,7 +583,7 @@ describe('Testing nodemailer-mock...', () => {
       mocked.mock.setShouldFailOnce();
       transporter.verify((err) => {
         expect(err).not.equal(null);
-        expect(err).to.deep.equal(messages.fail_response);
+        expect(err).to.deep.equal(mocked.mock.getFailResponse());
         done();
       });
     });
@@ -763,7 +763,7 @@ describe('Testing nodemailer-mock...', () => {
       if (promise instanceof Promise) {
         promise.catch((err) => {
           expect(err).not.equal(null);
-          expect(err).to.deep.equal(messages.fail_response);
+          expect(err).to.deep.equal(mocked.mock.getFailResponse());
           done();
         });
       } else {
@@ -945,7 +945,7 @@ describe('Testing nodemailer-mock...', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         expect(err).not.equal(null);
-        expect(err).to.deep.equal(messages.fail_response);
+        expect(err).to.deep.equal(mocked.mock.getFailResponse());
       }
     });
 

@@ -46,6 +46,7 @@ jspm_packages
 docs
 CONTRIBUTING.md
 src
+scripts
 mjs
 examples
 test

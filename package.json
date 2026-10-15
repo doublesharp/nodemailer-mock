@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications.",
   "repository": {
     "type": "git",
@@ -30,14 +30,23 @@
   "module": "./dist/nodemailer-mock.mjs",
   "types": "./dist/nodemailer-mock.d.ts",
   "exports": {
-    ".": "./dist/nodemailer-mock.js",
+    ".": {
+      "import": {
+        "types": "./dist/nodemailer-mock.d.mts",
+        "default": "./dist/nodemailer-mock.mjs"
+      },
+      "require": {
+        "types": "./dist/nodemailer-mock.d.ts",
+        "default": "./dist/nodemailer-mock.js"
+      }
+    },
     "./lib/messages": "./dist/lib/messages.js"
   },
   "scripts": {
-    "clean": "shx rm -rf ./dist",
+    "clean": "node -e \"require('node:fs').rmSync('./dist', { recursive: true, force: true })\"",
     "build": "pnpm run build:tsc && pnpm run build:mjs",
     "build:tsc": "tsc",
-    "build:mjs": "cp ./mjs/nodemailer-mock.mjs ./dist/nodemailer-mock.mjs",
+    "build:mjs": "cp ./mjs/nodemailer-mock.mjs ./mjs/nodemailer-mock.d.mts ./dist/",
     "prepare": "pnpm run clean && pnpm run build",
     "pretest": "pnpm run build",
     "test": "mocha -r ts-node/register",
@@ -53,7 +62,8 @@
     "example:jest": "jest examples/__tests__",
     "example:mocha": "cd examples; mocha -r ts-node/register test/mocha-commonjs-example-javascript.js test/mocha-commonjs-example-typescript.ts",
     "example:node-test": "node --experimental-test-module-mocks --test examples/test/node-test-example-javascript.mjs",
-    "example:vitest": "vitest run examples/test/vitest-example-javascript.test.mjs"
+    "example:vitest": "vitest run examples/test/vitest-example-javascript.test.mjs",
+    "test:package": "pnpm run build && node scripts/test-package.mjs"
   },
   "dependencies": {
     "debug": "^4.4.3"
@@ -64,49 +74,48 @@
   "devDependencies": {
     "@0xdoublesharp/doublcov": "0.4.4",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@jest/globals": "^30.5.1",
+    "@jest/globals": "^30.5.2",
     "@types/chai": "^5.2.3",
     "@types/debug": "^4.1.13",
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.20.1",
-    "@types/nodemailer": "^8.x",
-    "@typescript-eslint/eslint-plugin": "^8.70.0",
-    "@typescript-eslint/parser": "^8.70.0",
-    "chai": "^6.2.2",
-    "eslint": "^10.10.0",
-    "jest": "^30.5.1",
-    "knip": "^6.35.1",
-    "mocha": "^12.0.1",
-    "nodemailer": "~10.0.9",
+    "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.71.2",
+    "@typescript-eslint/parser": "^8.71.2",
+    "chai": "^6.3.0",
+    "eslint": "^10.12.0",
+    "jest": "^30.5.2",
+    "knip": "^6.41.0",
+    "mocha": "^12.0.3",
+    "nodemailer": "~10.1.1",
     "nyc": "^18.0.0",
-    "shx": "^0.4.0",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.14",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.4"
   },
   "overrides": {
     "@babel/core": "^7.29.7",
     "@istanbuljs/load-nyc-config": {
       "js-yaml": "^4.3.2"
     },
-    "brace-expansion@1": "~1.1.18",
-    "brace-expansion@2": "~2.1.4",
-    "brace-expansion@5": "~5.0.9",
+    "brace-expansion@1": "~1.1.21",
+    "brace-expansion@2": "~2.1.7",
+    "brace-expansion@5": "~5.0.12",
     "anymatch": {
       "picomatch": "~2.3.2"
     },
     "istanbul-lib-processinfo": {
       "uuid": "~14.0.1"
     },
-    "micromatch": {
-      "picomatch": "~2.3.2"
-    },
     "ts-node": {
       "diff": "~4.0.4"
     },
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "postcss": {
+      "source-map-js": "~1.2.2"
+    }
   },
   "pre-commit": [
     "lint"
