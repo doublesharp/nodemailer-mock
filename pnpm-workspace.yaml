@@ -4,11 +4,11 @@ allowBuilds:
 overrides:
   '@babel/core': ^7.29.7
   '@istanbuljs/load-nyc-config>js-yaml': ^4.3.2
-  brace-expansion@1: ~1.1.18
-  brace-expansion@2: ~2.1.4
-  brace-expansion@5: ~5.0.9
+  brace-expansion@1: ~1.1.21
+  brace-expansion@2: ~2.1.7
+  brace-expansion@5: ~5.0.12
   anymatch>picomatch: ~2.3.2
   istanbul-lib-processinfo>uuid: ~14.0.1
-  micromatch>picomatch: ~2.3.2
   ts-node>diff: ~4.0.4
   vite: ^8.2.1
+  postcss>source-map-js: ~1.2.2
