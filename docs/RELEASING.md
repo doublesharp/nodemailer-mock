@@ -85,7 +85,9 @@ pnpm install --frozen-lockfile
 pnpm run quality
 pnpm run nyc
 pnpm run examples
+pnpm run test:package
 pnpm audit
+pnpm audit --prod
 git diff --check
 ```
 
@@ -99,8 +101,13 @@ git diff --check
 - [ ] Review test and coverage results, the complete release diff, and the rendered
   Markdown. Verify documentation links and commands against the final tree.
 
-The CI matrix currently covers Node.js 22 and 24 with the single locked Nodemailer
-development version. It is not a Nodemailer-major compatibility matrix.
+CI runs the locked development dependency checks and an isolated package-consumer
+matrix across Node.js 22 and 24 with exact Nodemailer baselines 6.10.1, 7.0.13,
+8.0.11, 9.1.1, and 10.0.9. Run `pnpm run test:package` against the final locked
+development version as well; pass an exact version such as
+`pnpm run test:package 6.10.1` to repeat a baseline locally. These checks cover
+public package-name imports, runtime behavior, and CommonJS/ESM TypeScript
+consumers without changing the release lockfile.
 
 ## 5. Inspect and smoke-test the package
 
@@ -116,7 +123,7 @@ tar -tzf "$release_archive"
 ```
 
 - [ ] Confirm the archive contains `package.json`, `README.md`, `CHANGELOG.md`,
-  `LICENSE`, compiled JavaScript, the ESM wrapper, and TypeScript declarations.
+  `LICENSE`, compiled JavaScript, the ESM wrapper, and CommonJS/ESM TypeScript declarations.
 - [ ] Check `main`, `module`, `types`, and `exports` in the packaged `package.json`
   all point to included files. Source, tests, coverage, `docs/`, `CONTRIBUTING.md`,
   and pnpm lockfile/workspace configuration should be excluded by `.npmignore`.

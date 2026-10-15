@@ -11,6 +11,42 @@ for 2.0.11 and 2.0.14 also include follow-up commits present in their release ta
 
 ## Unreleased
 
+## [2.2.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.1.0...v2.2.0) - 2026-10-14
+
+See the [upgrade notes](https://github.com/doublesharp/nodemailer-mock/blob/v2.2.0/docs/releases/2.2.0.md)
+for the optional response configuration and reset boundaries.
+
+### Added
+
+- Optional realistic results with a typed envelope, recipients derived from the
+  compiled message, and the compiled message ID.
+- Deterministic message ID generators, typed persistent result overrides through
+  `setSentMessageInfo()`, and FIFO send outcomes through `queueResult()`.
+- Explicit `reset({ clearTransporters: true })` cleanup for the transporter
+  registry, event listeners, idle state, and individual close counts.
+- Automated packaged CommonJS/ESM runtime and TypeScript consumer checks across
+  Node.js 22 and 24 with exact Nodemailer 6–10 baselines.
+
+### Fixed
+
+- Keep default failure errors independent between mock instances and resets.
+- Prevent sends started before reset, including sends with asynchronous plugins,
+  from populating the next test's sent-mail history.
+- Accept custom transports with their own result types in TypeScript while
+  retaining the mock result type.
+- Export the documented default from the ESM wrapper and add matching ESM
+  declarations and public package-entrypoint regression tests.
+
+### Changed
+
+- Refresh compatible development dependencies and keep npm/pnpm overrides aligned.
+- Use Node.js file removal for the clean command instead of the `shx` dependency.
+
+### Security
+
+- Update affected development-tool dependencies and patched transitive resolutions
+  to address the audit findings in the previous lockfile.
+
 ## [2.1.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.0.14...v2.1.0) - 2026-09-14
 
 See the [upgrade notes](https://github.com/doublesharp/nodemailer-mock/blob/v2.1.0/docs/releases/2.1.0.md)

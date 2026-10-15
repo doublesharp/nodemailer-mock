@@ -70,4 +70,40 @@ for (const step of ['compile', 'stream']) {
   }));
   assert.equal(pluginMock.mock.getSentMail().length, 0);
 }
-console.log('Packaged runtime: imports, singleton, defaults, custom transport, callbacks/Promises, plugins and failures passed');
+// Verify new runtime APIs from the archive against every supported peer major.
+const realistic = getMockFor(nodemailer, { responseMode: 'realistic' });
+const realisticTransport = realistic.createTransport({}, { from: 'sender@example.com' });
+const realisticInfo = await realisticTransport.sendMail({
+  to: ['first@example.com', 'second@example.com'], messageId: '<realistic@example.com>',
+});
+assert.deepEqual(realisticInfo.envelope, {
+  from: 'sender@example.com', to: ['first@example.com', 'second@example.com'],
+});
+assert.deepEqual(realisticInfo.accepted, realisticInfo.envelope.to);
+assert.deepEqual(realisticInfo.rejected, []);
+assert.equal(realisticInfo.messageId, '<realistic@example.com>');
+realistic.mock.setSentMessageInfo({ response: 'configured' });
+const queuedError = new Error('queued failure');
+realistic.mock.queueResult({ error: queuedError });
+realistic.mock.queueResult({ info: { accepted: ['first@example.com'], rejected: ['second@example.com'] } });
+await assert.rejects(realisticTransport.sendMail({}), (error) => error === queuedError);
+const partial = await realisticTransport.sendMail({});
+assert.equal(partial.response, 'configured');
+assert.deepEqual(partial.accepted, ['first@example.com']);
+assert.deepEqual(partial.rejected, ['second@example.com']);
+const oldSend = realisticTransport.sendMail({ subject: 'before reset' });
+realistic.mock.reset();
+await oldSend;
+assert.deepEqual(realistic.mock.getSentMail(), []);
+assert.notEqual(realistic.mock.getFailResponse(), getMockFor(nodemailer).mock.getFailResponse());
+let oldIdleEvents = 0;
+realisticTransport.on('idle', () => oldIdleEvents++);
+realisticTransport.close();
+realistic.mock.reset({ clearTransporters: true });
+assert.deepEqual(realistic.mock.getTransporters(), []);
+assert.equal(realisticTransport.mock.getCloseCallCount(), 0);
+realisticTransport.mock.setIdle(true);
+assert.equal(oldIdleEvents, 0);
+await realisticTransport.sendMail({ subject: 'reused' });
+assert.equal(realistic.mock.getSentMail()[0].subject, 'reused');
+console.log('Packaged runtime: legacy/realistic results, queues, reset isolation, cleanup and public imports passed');

@@ -16,7 +16,8 @@ for supported versions without bundled declarations, install a matching
 `@types/nodemailer` version in TypeScript projects.
 
 The exported `MockSentMessageInfo` type describes the mock's result, including its
-placeholder envelope and the `Error` returned in `info.response` for failed sends.
+legacy placeholder envelope and the `Error` returned in `info.response` for failed sends.
+Opt into `RealisticMockSentMessageInfo` with the factory configuration below.
 For explicit mock transporter annotations, use `NodemailerMockTransporter` or
 `Transporter<MockSentMessageInfo>` to preserve the mock's result type. Standard
 Nodemailer plugins and failure checks can be passed to the mock.
@@ -51,7 +52,8 @@ const nodemailermock = getMockFor(require('nodemailer'));
 ```
 
 `getMockFor(nodemailer)` returns a new mock with its own state and uses the supplied
-Nodemailer module to create underlying transports. Replace `nodemailer` before
+Nodemailer module to create underlying transports. The optional second argument
+configures realistic results and a deterministic message ID generator. Replace `nodemailer` before
 loading application code that imports it. With Jest, inject the real module from
 `jest.requireActual('nodemailer')` in the manual mock shown below.
 
@@ -62,7 +64,8 @@ Use with test suites like [`jest`](https://www.npmjs.com/package/jest), [`mocha`
 ## `createTransport(transportOptions?, defaults?)`
 
 Returns a mocked Nodemailer transporter. You can omit the options, supply a
-transport/options object, or use an SMTP URL. The second argument provides message
+transport/options object, including a custom transport with its own result type,
+or use an SMTP URL. The second argument provides message
 defaults; values passed to `sendMail()` override them.
 
 ```javascript
@@ -84,12 +87,65 @@ rejects with the error.
 `setMockedClose(false)` delegates to the underlying transport when one is available.
 Real verification can connect to the configured mail server.
 
+## realistic results and queued outcomes
+
+Legacy results remain the default. Create a separate mock with `responseMode:
+'realistic'` to derive its envelope and accepted recipients from the compiled
+message. The result uses the message's `messageId`, or the configured generator
+when one is supplied. These values describe the simulation, not actual delivery.
+
+```javascript
+import nodemailer from 'nodemailer';
+import { getMockFor } from 'nodemailer-mock';
+
+const mailer = getMockFor(nodemailer, {
+  responseMode: 'realistic',
+  messageIdGenerator: () => '<test-message@example.test>',
+});
+const transport = mailer.createTransport();
+const info = await transport.sendMail({
+  from: 'sender@example.test',
+  to: 'recipient@example.test',
+  text: 'A deterministic test message',
+});
+console.log(info.envelope.to); // ['recipient@example.test']
+console.log(info.messageId); // '<test-message@example.test>'
+```
+
+TypeScript infers `RealisticMockSentMessageInfo` for this configuration. The
+existing `MockSentMessageInfo` and default factory return types retain their
+legacy envelope string.
+
+Use `setSentMessageInfo()` to configure result fields for successful sends. Use
+`queueResult()` to simulate individual failures or successes, including partial
+recipient acceptance:
+
+```javascript
+mailer.mock.setSentMessageInfo({ response: '250 simulated success' });
+mailer.mock.queueResult({ error: new Error('Simulated temporary failure') });
+mailer.mock.queueResult({ info: {
+  accepted: ['accepted@example.test'],
+  rejected: ['rejected@example.test'],
+} });
+```
+
+Each send reserves its queued outcome when it starts, so asynchronous plugins
+cannot reorder the queue. A queued outcome takes precedence over failure flags
+and failure checks for that send and does not consume a one-time failure flag.
+`verify()` does not consume the queue. Queued result fields override persistent
+result fields. `reset()` clears both kinds of override while preserving the
+factory's response mode and message ID generator.
+
 ## `NodemailerMock.mock` functions
 
-- `reset: () => void`
+- `reset: (options?: { clearTransporters?: boolean }) => void`
   - clears sent mail and the aggregate close count; restores failure settings, responses, mocked verify/close behavior, and disabled user plugins
+  - creates a fresh default failure `Error` and clears configured result overrides and queued outcomes
   - cancels pending idle changes scheduled with `scheduleIsIdle()`
-  - retains created transporters, their registered plugins, their individual close counts, and their current idle states
+  - sends started before reset still settle for their callers but cannot populate the new sent-mail history
+  - by default, retains created transporters, their registered plugins, their individual close counts, and their current idle states
+  - `reset({ clearTransporters: true })` also clears the registry, removes their event listeners, and resets their individual close counts and idle states
+  - full cleanup does not close real transports; a held transporter can still be reused explicitly
 - `getTransporters: () => NodemailerMockTransporter[]`
   - returns the transporters created by this mock, including those created before `reset()`
 - `getSentMail: () => Mail.Options[]`
@@ -135,7 +191,11 @@ Real verification can connect to the configured mail server.
 - `setFailResponse: (error: Error) => void`
   - set the `Error` that is returned in the callback for `transporter.sendMail()` or `transport.send()`
 - `getFailResponse: () => Error`
-  - returns the fail `Error` value
+  - returns this instance's fail `Error`; default errors are independent across instances and resets
+- `setSentMessageInfo(info)`
+  - sets typed partial result fields for successful sends until reset; accepts the envelope type for the configured response mode
+- `queueResult({ error } | { info? })`
+  - appends a failure or successful partial result for the next send; `{}` queues a success with the configured defaults
 - `scheduleIsIdle: (isIdle: boolean, timeout: number) => void`
   - after `timeout` milliseconds, update the idle state of all transporters created by this mock
 - `setIsIdle: (isIdle: boolean) => void`
@@ -152,7 +212,7 @@ Real verification can connect to the configured mail server.
 - `getPlugins: () => { [key: string]: NodemailerMockPlugin[] }`
   - returns the plugins that have been added via `transporter.use()` as arrays, keyed by step
 - `getCloseCallCount: () => number`
-  - get the number of times `close()` has been called on this transporter. this number is not reset with the mock.
+  - get the number of times `close()` has been called on this transporter. this number is retained by ordinary reset and cleared by `reset({ clearTransporters: true })`.
 - `setIdle(isIdle: boolean): void`
   - sets the idle state of `transporter.isIdle()` and emits an `idle` event when the `isIdle` argument is `true`.
 

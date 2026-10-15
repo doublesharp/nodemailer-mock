@@ -79,6 +79,7 @@ Run from the repository root:
 pnpm run quality
 pnpm run nyc
 pnpm run examples
+pnpm run test:package
 git diff --check
 ```
 
@@ -89,9 +90,17 @@ Node.js 22 and 24 for runtime, dependency, or tooling changes. For a docs-only
 change, verify affected commands, relative links, and formatting; rerun executable
 examples if their code changes.
 
-For compatibility or packaging changes, also perform the package checks in the
-[release runplan](docs/RELEASING.md). CI tests the locked development Nodemailer
-version; it does not automatically prove compatibility with every supported major.
+`test:package` builds an archive and tests fresh CommonJS/ESM runtime and
+TypeScript consumers using the installed development Nodemailer version. Pass an
+exact supported version to check another baseline, for example
+`pnpm run test:package 6.10.1`. Consumer installs use a temporary directory and a
+configured release-age protection; they do not rewrite the repository lockfile.
+
+CI also runs package consumers on Node.js 22 and 24 with Nodemailer 6.10.1,
+7.0.13, 8.0.11, 9.1.1, and 10.0.9. These are exact tested baselines, not a claim
+that every published patch was tested. For compatibility or packaging changes,
+also perform the final-version package checks in the
+[release runplan](docs/RELEASING.md).
 
 ## Submit a pull request
 
