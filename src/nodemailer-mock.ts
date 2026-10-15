@@ -21,6 +21,8 @@ const debug = Debug('nodemailer-mock');
 export type NodemailerMockPlugin = Mail.PluginFunction<any>;
 export type CheckMailMessageOrNull = ((email: Parameters<NodemailerMockPlugin>[0]) => boolean) | null;
 export type NodemailerType = Pick<typeof Nodemailer, 'createTransport' | 'createTestAccount' | 'getTestMessageUrl'>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NodemailerMockTransportInput = Transport<any> | Mail.Options | { [key: string]: unknown } | string;
 
 export interface MockOptions<Mode extends MockResponseMode = 'legacy'> {
   responseMode?: Mode;
@@ -64,7 +66,7 @@ export interface NodemailerMockTransporter<Mode extends MockResponseMode = 'lega
 export interface NodemailerMock<Mode extends MockResponseMode = 'legacy'> {
   nodemailer: NodemailerType | undefined;
   createTransport: (
-    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
   ) => NodemailerMockTransporter<Mode>;
   mock: {
@@ -141,7 +143,7 @@ export class NodemailerMocked<Mode extends MockResponseMode = 'legacy'> implemen
   }
 
   public createTransport = (
-    transport?: Transport | Mail.Options | { [key: string]: unknown } | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
   ): NodemailerMockTransporter<Mode> => {
     // indicate that we are creating a transport
@@ -380,7 +382,7 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       addSentMail: (mail: Mail.Options, generation: number) => void;
       incrementCloseCallCount: () => void;
     },
-    transport?: Transport | Mail.Options | string,
+    transport?: NodemailerMockTransportInput,
     options?: Mail.Options
   ) {
     this.nodemailermock = nodemailermock;
