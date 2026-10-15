@@ -24,10 +24,15 @@ export type NodemailerType = Pick<typeof Nodemailer, 'createTransport' | 'create
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NodemailerMockTransportInput = Transport<any> | Mail.Options | { [key: string]: unknown } | string;
 
-export interface MockOptions<Mode extends MockResponseMode = 'legacy'> {
+export type MockOptions<Mode extends MockResponseMode = 'legacy'> = {
   responseMode?: Mode;
   messageIdGenerator?: () => string;
-}
+} & ('legacy' extends Mode ? unknown : { responseMode: Mode });
+
+// Keep optional legacy arguments while requiring the discriminator for realistic results.
+type MockArguments<Mode extends MockResponseMode> =
+  [mailer?: NodemailerType, options?: MockOptions<Mode>] &
+  ('legacy' extends Mode ? unknown : [mailer: NodemailerType | undefined, options: MockOptions<Mode>]);
 
 export interface MockResetOptions {
   clearTransporters?: boolean;
@@ -125,10 +130,11 @@ export class NodemailerMocked<Mode extends MockResponseMode = 'legacy'> implemen
   private _shouldFailCheck: CheckMailMessageOrNull = null;
   private _shouldUsePlugins = false;
 
-  constructor(mailer?: NodemailerType, options: MockOptions<Mode> = {}) {
+  constructor(...args: MockArguments<Mode>) {
+    const [mailer, options] = args;
     this.nodemailer = mailer;
-    this._responseMode = options.responseMode ?? 'legacy';
-    this._messageIdGenerator = options.messageIdGenerator;
+    this._responseMode = options?.responseMode ?? 'legacy';
+    this._messageIdGenerator = options?.messageIdGenerator;
 
     // legacy aliases
     Object.assign(this.mock, {
@@ -602,9 +608,9 @@ export const mocked = new NodemailerMocked(Nodemailer);
 export const { createTransport, mock, nodemailer } = mocked;
 // use this to pass in a real nodemailer instance
 export const getMockFor = <Mode extends MockResponseMode = 'legacy'>(
-  nodemailer?: NodemailerType, options?: MockOptions<Mode>
+  ...args: MockArguments<Mode>
 ) => {
-  return new NodemailerMocked(nodemailer, options);
+  return new NodemailerMocked<Mode>(...args);
 };
 
 export default mocked;
