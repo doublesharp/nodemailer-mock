@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { packPackage } from './pack.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const declarationVersions = { 6: '6.4.17', 7: '7.0.11', 8: '8.0.1', 9: '8.0.1', 10: null };
@@ -29,9 +30,7 @@ const run = (command, args, cwd = consumer) => execFileSync(command, args, {
 });
 try {
   // Do not run prepare or install anything in the source checkout.
-  run('npm', ['pack', '--ignore-scripts', '--pack-destination', temporary], root);
-  const archive = readdirSync(temporary).find((name) => name.endsWith('.tgz'));
-  if (!archive) throw new Error('npm pack did not produce an archive');
+  const { filename: archive } = packPackage(root, temporary);
   cpSync(join(root, 'test/package'), consumer, { recursive: true });
   const dependencies = {
     'nodemailer-mock': `file:${join(temporary, archive)}`,

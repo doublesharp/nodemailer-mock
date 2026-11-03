@@ -1,3 +1,4 @@
+import type { TestAccount } from 'nodemailer';
 import nodemailer from 'nodemailer';
 import {
   getMockFor, NodemailerMocked, NodemailerMock, NodemailerMockTransporter, MockSentMessageInfo,
@@ -94,3 +95,15 @@ const unsafeDynamicConstructor: Promise<RealisticMockSentMessageInfo> = dynamicC
 void [defaultConstructorResult, ordinaryFactoryResult, legacyOptionsResult, inferredFactoryResult,
   inferredConstructorResult, typedConstructorResult, typedOptionsConstructorResult, explicitDefaultResult,
   dynamicResult, unsafeDynamicFactory, unsafeDynamicConstructor, unsafeLegacyFactory, unsafeLegacyConstructor];
+
+const deliveryOptions: MockOptions = { simulateDelivery: true, validateContent: true, smtpCapabilities: ['DSN'] };
+const deliveryMock = getMockFor(nodemailer, deliveryOptions);
+const account: Promise<TestAccount> = deliveryMock.createTestAccount();
+deliveryMock.createTestAccount('https://ignored.test', (error, testAccount) => {
+  const username: string = testAccount.user;
+  void [error, username];
+});
+deliveryMock.mock.setSentMessageInfo({ rejectedErrors: [Object.assign(new Error('refused'), { responseCode: 550 })],
+  ehlo: ['DSN'], envelopeTime: 1, messageTime: 2, messageSize: 3, message: Buffer.from('mime') });
+const preview: string | false = deliveryMock.getTestMessageUrl({ response: '250 [STATUS=sent MSGID=test]' });
+void [account, preview];

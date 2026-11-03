@@ -1,9 +1,9 @@
-# Contribution and release runplan
+# Release guide
 
-Use this checklist to prepare, review, publish, and verify a stable release.
-Start with [CONTRIBUTING.md](../CONTRIBUTING.md) for implementation and testing.
+Follow this checklist to publish a stable release. For code changes and tests,
+start with [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The current [publish workflow](../.github/workflows/publish.yml) publishes to npm
+The [publish workflow](../.github/workflows/publish.yml) publishes to npm
 when a tag matching `v*` is pushed. It checks that the tag matches `package.json`,
 installs the frozen pnpm lockfile on Node.js 24, runs `quality` and `nyc`, and runs
 `npm publish --access public`. It does not run the examples or create a GitHub
@@ -23,27 +23,25 @@ Release. Pushing the version tag is the publication step.
 | Minor (`X.Y+1.0`) | Backward-compatible new APIs or capabilities, including support for a new Nodemailer major when existing supported usage remains compatible |
 | Major (`X+1.0.0`) | Removed APIs, incompatible behavior or public types, dropped supported Nodemailer majors, or raised consumer runtime requirements |
 
-Review compatibility rather than copying the size of an upstream version bump.
-Include migration instructions for breaking changes. A docs-only change can wait
-for the next code release if no package publication is needed.
+Choose the bump based on changes to this package, including when upgrading a
+dependency. Include migration instructions for breaking changes. Documentation
+changes can wait for the next code release if no package publication is needed.
 
-**Prereleases:** the existing workflow publishes to the default `latest` dist-tag,
-even for a tag such as `v3.0.0-rc.1`. Before publishing a prerelease, change and
-review the workflow to use an explicit non-stable npm dist-tag (for example,
-`next`). Do not push a prerelease version tag using the current workflow.
+The workflow publishes to `latest`, even for a prerelease tag such as
+`v3.0.0-rc.1`. Before pushing a prerelease tag, change and review the workflow to
+use a non-stable npm dist-tag such as `next`.
 
 ## 2. Complete code, tests, and documentation
 
-- [ ] Fix the intended issues and add regression tests; review correctness,
-  performance, reset/lifecycle behavior, and error propagation.
-- [ ] Update `README.md`: supported versions, installation, public API signatures,
-  defaults, error behavior, and examples must describe the code being released.
-  Compare compatibility claims with `peerDependencies` and the CI matrix; review
+- [ ] Fix the issues and add regression tests. Review performance, reset and
+  cleanup behavior, and error handling.
+- [ ] Check README instructions and examples against the code being released.
+  Check supported versions against `peerDependencies` and the CI matrix; review
   version-dependent test-runner snippets when changing supported runtimes.
-- [ ] Update affected `docs/` pages, this runplan, and `CONTRIBUTING.md` when the
+- [ ] Update affected `docs/` pages, this guide, and `CONTRIBUTING.md` when the
   process or commands change. Keep runnable examples and README snippets aligned.
-- [ ] Reconcile every user-visible change with `CHANGELOG.md`'s `Unreleased`
-  section. Remove duplicate or speculative entries. Include security fixes and
+- [ ] List user-visible changes under `Unreleased` in `CHANGELOG.md`.
+  Remove duplicate or speculative entries. Include security fixes and
   migration notes where applicable.
 - [ ] Review dependency ranges and resolved versions. Keep `package.json`,
   `pnpm-lock.yaml`, and `pnpm-workspace.yaml` consistent. Do not bypass release-age
@@ -51,8 +49,8 @@ review the workflow to use an explicit non-stable npm dist-tag (for example,
 
 ## 3. Bump the package version
 
-In the release branch, run exactly one bump command. This example selects a patch;
-replace `patch` with `minor`, `major`, or the agreed exact version:
+On the release branch, choose one version bump. Replace `patch` below with `minor`,
+`major`, or an agreed version as needed:
 
 ```sh
 npm version patch --no-git-tag-version --ignore-scripts
@@ -60,10 +58,10 @@ pnpm install --lockfile-only --ignore-scripts
 git diff -- package.json pnpm-lock.yaml
 ```
 
-`npm version` here only edits version metadata; it does not create a commit or tag
-and does not run lifecycle scripts. Continue using pnpm to install dependencies.
-The root package version may not change the pnpm lockfile; do not manufacture a
-lockfile diff or create a `package-lock.json`.
+These flags make `npm version` edit metadata without creating a commit or tag or
+running lifecycle scripts. Use pnpm to install dependencies. If the root version
+change leaves the pnpm lockfile unchanged, leave it alone. Do not create a
+`package-lock.json`.
 
 - [ ] Confirm `package.json` contains the intended version and that version is not
   already published on npm or used by a remote tag.
@@ -91,23 +89,24 @@ pnpm audit --prod
 git diff --check
 ```
 
-- [ ] All checks pass; investigate any audit warnings and record unresolved risks
-  for maintainer review before proceeding.
+- [ ] Confirm all checks pass. Investigate audit warnings and record unresolved
+  findings for maintainer review.
 - [ ] For transport, module-loading, type, or peer-range changes, test every
-  supported Nodemailer major (currently 6–10) on both Node.js versions. Use isolated
+  supported Nodemailer major, currently 6 through 10, on both Node.js versions. Use isolated
   temporary checkouts or consumers with exact tested dependency versions, leaving
   the release lockfile unchanged. Run regression tests and CommonJS/ESM TypeScript
   fixtures as well as a basic send. Record exact Node.js and Nodemailer versions.
 - [ ] Review test and coverage results, the complete release diff, and the rendered
   Markdown. Verify documentation links and commands against the final tree.
+- [ ] Confirm every source file under `src/` meets the enforced 100% statement,
+  branch, function, and line coverage thresholds.
 
-CI runs the locked development dependency checks and an isolated package-consumer
-matrix across Node.js 22 and 24 with exact Nodemailer baselines 6.10.1, 7.0.13,
-8.0.11, 9.1.1, and 10.0.9. Run `pnpm run test:package` against the final locked
-development version as well; pass an exact version such as
-`pnpm run test:package 6.10.1` to repeat a baseline locally. These checks cover
-public package-name imports, runtime behavior, and CommonJS/ESM TypeScript
-consumers without changing the release lockfile.
+CI checks the locked development dependencies and packaged consumers on Node.js
+22 and 24 with Nodemailer 6.10.1, 7.0.13, 8.0.11, 9.1.1, and 10.0.9. Run
+`pnpm run test:package` with the final locked development version too. To check a
+specific baseline locally, pass its exact version, such as
+`pnpm run test:package 6.10.1`. This tests runtime behavior and CommonJS/ESM
+TypeScript imports by package name without changing the release lockfile.
 
 ## 5. Inspect and smoke-test the package
 
@@ -117,10 +116,14 @@ After the build and tests pass, create an archive outside the checkout:
 release_version=$(node -p "require('./package.json').version")
 release_nodemailer_version=$(node -p "require('nodemailer/package.json').version")
 release_pack_dir=$(mktemp -d)
-pnpm pack --pack-destination "$release_pack_dir"
+node scripts/pack.mjs "$release_pack_dir"
 release_archive="$release_pack_dir/nodemailer-mock-$release_version.tgz"
 tar -tzf "$release_archive"
 ```
+
+The pack script preserves npm's file exclusions and stages a real copy of the
+build when `dist/` is a directory symlink. Temporary directories follow the
+shell's `TMPDIR` setting.
 
 - [ ] Confirm the archive contains `package.json`, `README.md`, `CHANGELOG.md`,
   `LICENSE`, compiled JavaScript, the ESM wrapper, and CommonJS/ESM TypeScript declarations.
@@ -164,9 +167,8 @@ NODE
 )
 ```
 
-- [ ] The smoke test passes without relying on repository source or build tools.
-  This is an additional packaging check, not a substitute for regression/type
-  tests across supported Nodemailer versions.
+- [ ] Confirm the smoke test passes without repository source or build tools.
+  Also run regression and type tests across supported Nodemailer versions.
 - [ ] Save the tested commit, command results, exact version matrix, and archive
   checksum (`shasum -a 256 "$release_archive"`) in the release PR or release record.
   The publish workflow builds its own archive from the tagged commit.
@@ -174,7 +176,7 @@ NODE
 ## 6. Review and merge
 
 - [ ] Submit the release PR with the selected version, user-visible changes,
-  migration notes, dependency/security status, and verification evidence.
+  migration notes, dependency and audit results, and checks run.
 - [ ] Ensure the PR includes the version bump, changelog, README/docs changes, and
   any relevant lockfile changes. Stage only intended files; exclude archives and
   generated output.
@@ -183,14 +185,13 @@ NODE
   affected checks on the final source.
 - [ ] Confirm the exact commit to tag contains the reviewed release and has passed
   CI. If a docs-only change did not trigger CI, run the workflow manually or record
-  equivalent final-commit checks before publishing.
+  equivalent checks on that commit before publishing.
 
 ## 7. Publish the stable release
 
-Only a maintainer intending to publish should perform this step. Confirm npm
-publishing access and the trusted-publisher configuration for this repository and
-`publish.yml`. The workflow requests OIDC permission; the repository file alone
-does not prove the npm-side configuration is correct.
+A maintainer with publishing access must verify npm's trusted-publisher
+configuration for this repository and `publish.yml` before tagging. The workflow
+requests OIDC permission, but npm must also be configured to trust it.
 
 From a clean checkout of the reviewed release commit on `main`:
 
@@ -206,7 +207,7 @@ npm view "nodemailer-mock@$release_version" version
 ```
 
 Stop if the checkout is dirty, `HEAD` differs from the reviewed commit, the tag
-already exists, or npm returns that version. An npm registry “version not found”
+already exists, or npm returns that version. An npm registry "version not found"
 response is expected for a new version; a network or authentication failure is not
 proof that the version is unused. Verify the changelog version and date once more.
 
@@ -242,13 +243,13 @@ npm view nodemailer-mock dist-tags --json
 
 ## If publication fails or a released bug is found
 
-Read the failed workflow step and check npm before retrying: a failed job can occur
-after an upload succeeds. If the version is absent and the failure was transient,
+Read the failed workflow step and check npm before retrying. A job can fail after
+an upload succeeds. If the version is absent and the failure was transient,
 rerun the workflow for the same tag and commit. If fixing it changes the release
-source, prepare a new version and tag through this checklist; do not move the old
+source, prepare a new version and tag using this checklist; do not move the old
 tag or try to overwrite an existing npm version.
 
 For a published bug, add a regression test, fix it, document the impact, and release
-a new patch (or the appropriate larger bump for an incompatible fix). A maintainer
+a new patch, or a larger bump for an incompatible fix. A maintainer
 may separately deprecate a broken version or move a dist-tag after assessing users'
 needs. Record that decision; deleting a GitHub tag does not undo npm publication.

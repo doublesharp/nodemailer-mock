@@ -1,31 +1,79 @@
 # Changelog
 
-Notable changes to `nodemailer-mock`, newest first. For contribution and release
+Changes to `nodemailer-mock`, newest first. For contribution and release
 steps, see [CONTRIBUTING.md](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md) and the
-[release runplan](https://github.com/doublesharp/nodemailer-mock/blob/main/docs/RELEASING.md).
+[release guide](https://github.com/doublesharp/nodemailer-mock/blob/main/docs/RELEASING.md).
 
-Historical entries were reconstructed from commits and `package.json` version
-changes on `main`. Dates are Git commit dates, not independently verified npm
-publication dates. Heading links identify the source version commit; the entries
+Historical entries come from commits and `package.json` version changes on `main`.
+Their dates are Git commit dates; npm publication dates have not been verified.
+Heading links identify the version commit; the entries
 for 2.0.11 and 2.0.14 also include follow-up commits present in their release tags.
 
 ## Unreleased
 
+## [2.3.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.2.0...v2.3.0) - 2026-11-03
+
+### Added
+
+- Offline `createTestAccount()` and `getTestMessageUrl()` helpers with isolated,
+  configurable test accounts.
+- Stream and JSON message output, including MIME transforms and DKIM signing,
+  plus optional content validation for attachment and stream failures.
+- Typed SMTP result overrides for rejected-recipient errors, EHLO capabilities,
+  timings, message size, and generated message output.
+- Optional delivery simulation for pool capacity, rate limits, connection-loss
+  retries, shutdown events, OAuth2 token provision and renewal, and REQUIRETLS checks.
+- Package-consumer checks for the new APIs across supported Nodemailer versions.
+
+### Fixed
+
+- Preserve the exported transport constructor's existing handler arguments when
+  adding delivery simulation hooks.
+- Keep retrying delivery pools responsive to timers, `close()`, and `reset()`,
+  including unlimited retries after persistent pre-send disconnects.
+- Preserve local `dist/` directory symlinks during clean and rebuild, and include
+  redirected build files in package checks and archives without requiring local
+  filesystem paths in project configuration.
+- Use `--inspect-brk` in the debugger command instead of the unsupported
+  `--debug-brk` flag.
+- Run main-branch CI when root CommonJS/ESM scripts, YAML files, or ignore rules
+  change.
+
+### Changed
+
+- Require 100% source coverage for statements, branches, functions, and lines,
+  with regression tests for reset races, stale callbacks, and result isolation.
+- Refresh compatible development tools, including Nodemailer 10.3.1.
+- Tighten wording in the README, contributor and release guides, and upgrade notes.
+
+### Security
+
+- Update development Nodemailer and Serialize JavaScript and override Glob and
+  Minimatch to patched releases, keeping npm and pnpm resolutions aligned.
+- The low-severity `deepmerge` advisory (GHSA-gcqx-w48m-w2h4) remains in Jest's
+  configuration tooling; no patched release is published. It is not a runtime
+  dependency of this package.
+
+### Removed
+
+- Obsolete ESLint configuration files and unused Git hook settings.
+- Legacy Grunt, node-waf, and JSPM ignore rules and stale ESLint packaging exclusions.
+
 ## [2.2.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.1.0...v2.2.0) - 2026-10-15
 
 See the [upgrade notes](https://github.com/doublesharp/nodemailer-mock/blob/v2.2.0/docs/releases/2.2.0.md)
-for the optional response configuration and reset boundaries.
+for response configuration and reset behavior.
 
 ### Added
 
 - Optional realistic results with a typed envelope, recipients derived from the
   compiled message, and the compiled message ID.
 - Deterministic message ID generators, typed persistent result overrides through
-  `setSentMessageInfo()`, and FIFO send outcomes through `queueResult()`.
+  `setSentMessageInfo()`, and ordered send outcomes through `queueResult()`.
 - Explicit `reset({ clearTransporters: true })` cleanup for the transporter
   registry, event listeners, idle state, and individual close counts.
-- Automated packaged CommonJS/ESM runtime and TypeScript consumer checks across
-  Node.js 22 and 24 with exact Nodemailer 6–10 baselines.
+- Package tests for CommonJS/ESM runtime and TypeScript consumers on
+  Node.js 22 and 24 with pinned Nodemailer 6 through 10 versions.
 
 ### Fixed
 

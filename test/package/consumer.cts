@@ -1,3 +1,4 @@
+import type { TestAccount } from 'nodemailer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import defaultExport = require('nodemailer-mock');
 const { getMockFor } = defaultExport;
@@ -56,3 +57,12 @@ getMockFor<'realistic'>();
 // @ts-expect-error An explicitly realistic constructor cannot omit its options.
 new defaultExport.NodemailerMocked<'realistic'>();
 void missingMode;
+
+
+const delivery = getMockFor(nodemailer, { simulateDelivery: true, validateContent: true, smtpCapabilities: ['DSN'] });
+const account: Promise<TestAccount> = delivery.createTestAccount();
+delivery.createTestAccount((error, value) => { const user: string = value.user; void [error, user]; });
+delivery.mock.setSentMessageInfo({ ehlo: ['DSN'], rejectedErrors: [new Error('refused')], envelopeTime: 1,
+  messageTime: 2, messageSize: 3, message: Buffer.from('mime') });
+const url: string | false = delivery.getTestMessageUrl({ response: '250 [STATUS=sent MSGID=test]' });
+void [account, url];
