@@ -1,6 +1,6 @@
 {
   "name": "nodemailer-mock",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications.",
   "repository": {
     "type": "git",
@@ -43,7 +43,7 @@
     "./lib/messages": "./dist/lib/messages.js"
   },
   "scripts": {
-    "clean": "node -e \"require('node:fs').rmSync('./dist', { recursive: true, force: true })\"",
+    "clean": "node scripts/clean.mjs",
     "build": "pnpm run build:tsc && pnpm run build:mjs",
     "build:tsc": "tsc",
     "build:mjs": "cp ./mjs/nodemailer-mock.mjs ./mjs/nodemailer-mock.d.mts ./dist/",
@@ -57,7 +57,7 @@
     "typecheck": "pnpm run build && tsc --noEmit && tsc -p tsconfig.type-tests.json",
     "knip": "knip",
     "quality": "pnpm run lint && pnpm run typecheck && pnpm run knip",
-    "inspect": "NODE_ENV=test pnpm run test -- -s 0 --inspect --debug-brk",
+    "inspect": "NODE_ENV=test pnpm run test --inspect-brk",
     "examples": "pnpm run example:jest && pnpm run example:mocha && pnpm run example:node-test && pnpm run example:vitest",
     "example:jest": "jest examples/__tests__",
     "example:mocha": "cd examples; mocha -r ts-node/register test/mocha-commonjs-example-javascript.js test/mocha-commonjs-example-typescript.ts",
@@ -72,7 +72,7 @@
     "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x || ^10.x"
   },
   "devDependencies": {
-    "@0xdoublesharp/doublcov": "0.4.4",
+    "@0xdoublesharp/doublcov": "0.4.5",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@jest/globals": "^30.5.2",
     "@types/chai": "^5.2.3",
@@ -81,19 +81,19 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.5",
     "@types/nodemailer": "^8.0.2",
-    "@typescript-eslint/eslint-plugin": "^8.71.2",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "chai": "^6.3.0",
-    "eslint": "^10.12.0",
+    "eslint": "^10.14.0",
     "jest": "^30.5.2",
-    "knip": "^6.41.0",
+    "knip": "^6.44.1",
     "mocha": "^12.0.3",
-    "nodemailer": "~10.1.1",
+    "nodemailer": "~10.3.1",
     "nyc": "^18.0.0",
-    "ts-jest": "^29.4.14",
+    "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.4"
+    "vitest": "^5.1.0"
   },
   "overrides": {
     "@babel/core": "^7.29.7",
@@ -112,13 +112,11 @@
     "ts-node": {
       "diff": "~4.0.4"
     },
-    "vite": "^8.2.1",
+    "vite": "~8.3.5",
+    "glob@>=9 <14.0.2": "~14.0.3",
+    "minimatch@<11.0.1": "~11.0.4",
     "postcss": {
       "source-map-js": "~1.2.2"
     }
-  },
-  "pre-commit": [
-    "lint"
-  ],
-  "pre-push": []
+  }
 }

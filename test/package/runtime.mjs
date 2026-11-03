@@ -107,3 +107,39 @@ assert.equal(oldIdleEvents, 0);
 await realisticTransport.sendMail({ subject: 'reused' });
 assert.equal(realistic.mock.getSentMail()[0].subject, 'reused');
 console.log('Packaged runtime: legacy/realistic results, queues, reset isolation, cleanup and public imports passed');
+
+
+// Current documented features must also work from the packed public entry point.
+const features = getMockFor(nodemailer, { responseMode: 'realistic', simulateDelivery: true, validateContent: true,
+  smtpCapabilities: ['DSN'] });
+assert.equal(typeof commonjs.createTestAccount, 'function');
+assert.equal(typeof defaultExport.getTestMessageUrl, 'function');
+const testAccount = await features.createTestAccount();
+assert.ok(testAccount.smtp.host.endsWith('.test'));
+features.mock.setTestAccount({ ...testAccount, web: 'https://preview.test' });
+assert.equal(features.getTestMessageUrl({ response: '250 [STATUS=sent MSGID=123]' }), 'https://preview.test/message/123');
+const output = await features.createTransport({ streamTransport: true, buffer: true }).sendMail({
+  from: 'from@test', to: 'to@test', text: 'compiled MIME', messageId: '<package@test>',
+});
+assert.ok(Buffer.isBuffer(output.message));
+assert.match(output.message.toString(), /compiled MIME/);
+assert.equal(output.messageSize, output.message.length);
+const jsonOutput = await features.createTransport({ jsonTransport: true }).sendMail({ text: 'JSON content' });
+assert.equal(JSON.parse(jsonOutput.message).text, 'JSON content');
+await assert.rejects(features.createTransport({ disableFileAccess: true }).sendMail({
+  attachments: [{ path: '/missing/consumer-file' }],
+}), /File access rejected/);
+features.mock.setSentMessageInfo({ ehlo: ['DSN'], envelopeTime: 1, rejectedErrors: [new Error('refused')] });
+assert.deepEqual((await features.createTransport().sendMail({})).ehlo, ['DSN']);
+const pool = features.createTransport({ pool: true, maxConnections: 1 });
+assert.equal(pool.isIdle(), true);
+await pool.sendMail({});
+pool.close();
+await assert.rejects(pool.sendMail({}), { code: 'EPOOLCLOSED' });
+features.mock.reset();
+let oauthCalls = 0;
+const oauth = features.createTransport({ auth: { type: 'OAuth2', user: 'oauth@test' } });
+oauth.set('oauth2_provision_cb', (_user, _renew, done) => { oauthCalls++; done(null, 'offline-token'); });
+await oauth.sendMail({});
+assert.equal(oauthCalls, 1);
+console.log('Packaged runtime: offline helpers, rendering, validation, result metadata, pool and OAuth passed');

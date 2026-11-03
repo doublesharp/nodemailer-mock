@@ -17,19 +17,12 @@ coverage
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
-.grunt
-
-# node-waf configuration
-.lock-wscript
-
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 build/Release
 
 # Dependency directories
 node_modules
 .pnpm-store
-jspm_packages
 
 # Optional npm cache directory
 .npm
@@ -42,3 +35,6 @@ jspm_packages
 .doublcov
 
 dist
+
+# Local planning documents
+/docs/superpowers/

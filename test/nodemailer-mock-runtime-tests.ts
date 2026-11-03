@@ -2,10 +2,39 @@ import { strict as assert } from 'node:assert';
 import { setTimeout as delay } from 'node:timers/promises';
 import * as nodemailer from 'nodemailer';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
-import { getMockFor, MockSentMessageInfo } from '../src/nodemailer-mock';
+import { getMockFor, MockSentMessageInfo, NodemailerMockTransport } from '../src/nodemailer-mock';
 import { messages } from '../src/lib/messages';
 
 describe('runtime isolation and response simulation', () => {
+  for (const simulation of [false, true]) {
+    it(`supports legacy transport constructor handlers with simulation ${simulation}`, async () => {
+      const instance = getMockFor();
+      const sent: unknown[] = [];
+      let closes = 0;
+      const transport = new NodemailerMockTransport(instance, {
+        beginSend: () => ({ generation: 0 }),
+        createInfo: () => messages.info(),
+        configureInfo: (info) => info,
+        failureInfo: (info) => info,
+        addSentMail: (mail) => { sent.push(mail); },
+        incrementCloseCallCount: () => { closes++; },
+      }, simulation ? { pool: true } : undefined, undefined, simulation ? { simulateDelivery: true } : undefined);
+      if (simulation) {
+        instance.mock.setFailResponse(Object.assign(new Error('disconnected'), { code: 'ECONNECTION', command: 'CONN' }));
+        instance.mock.setShouldFailOnce(true);
+      }
+      const email = { data: { subject: 'direct transport' } } as MailMessage<MockSentMessageInfo>;
+      const info = await new Promise<MockSentMessageInfo>((resolve, reject) => {
+        transport.send(email, (error, result) => error ? reject(error) : resolve(result));
+      });
+      assert.equal(info.response, messages.success_response);
+      assert.deepEqual(sent, [email.data]);
+      assert.equal(await transport.verify(), true);
+      transport.close();
+      assert.equal(closes, 1);
+    });
+  }
+
   it('isolates default errors across instances, public defaults, and reset', () => {
     const first = getMockFor();
     const second = getMockFor();

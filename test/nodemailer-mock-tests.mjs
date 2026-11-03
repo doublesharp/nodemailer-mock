@@ -44,8 +44,9 @@ describe('Test MJS', () => {
     });
 
     it('should resolve native package imports through the ESM wrapper', () => {
+      // Node resolves directory symlinks for both package and relative imports.
       expect(import.meta.resolve('nodemailer-mock')).to.equal(
-        new URL('../dist/nodemailer-mock.mjs', import.meta.url).href,
+        import.meta.resolve('../dist/nodemailer-mock.mjs'),
       );
       expect(publicModule.default).to.equal(mocked.default);
       expect(publicModule.mock).to.equal(mocked.mock);

@@ -1,4 +1,15 @@
 import { randomBytes } from 'crypto';
+import type { Readable } from 'node:stream';
+
+export interface MockSmtpError extends Error {
+  code?: string;
+  command?: string;
+  response?: string;
+  responseCode?: number;
+  recipient?: string;
+  rejected?: string[];
+  rejectedErrors?: MockSmtpError[];
+}
 
 /** The mock's fixed result fields, including its legacy error response. */
 export interface MockSentMessageInfo {
@@ -8,6 +19,12 @@ export interface MockSentMessageInfo {
   rejected: string[];
   pending: string[];
   response: string | Error;
+  rejectedErrors?: MockSmtpError[];
+  ehlo?: string[];
+  envelopeTime?: number;
+  messageTime?: number;
+  messageSize?: number;
+  message?: Buffer | Readable | string | object;
 }
 
 export interface RealisticMockSentMessageInfo extends Omit<MockSentMessageInfo, 'envelope'> {

@@ -10,5 +10,7 @@ overrides:
   anymatch>picomatch: ~2.3.2
   istanbul-lib-processinfo>uuid: ~14.0.1
   ts-node>diff: ~4.0.4
-  vite: ^8.2.1
+  vite: ~8.3.5
+  'glob@>=9 <14.0.2': ~14.0.3
+  minimatch@<11.0.1: ~11.0.4
   postcss>source-map-js: ~1.2.2

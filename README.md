@@ -4,13 +4,13 @@
 [![Code Coverage Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdoublesharp.github.io%2Fnodemailer-mock%2Fcoverage-badge.json)](https://doublesharp.github.io/nodemailer-mock/coverage/)
 ![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
 
-Easy as pie [`nodemailer`](https://www.npmjs.com/package/nodemailer) mock for unit testing your Node.js applications.
+Mock [`nodemailer`](https://www.npmjs.com/package/nodemailer) in Node.js tests.
+Inspect sent messages and simulate failures without sending email.
 
-[Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md) ·
-[Release runplan](https://github.com/doublesharp/nodemailer-mock/blob/main/docs/RELEASING.md)
+[Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
 
-This release supports Nodemailer 6, 7, 8, 9, and 10, as declared in
-[`package.json`](package.json)'s `peerDependencies`. Use a Node.js version supported
+Supports Nodemailer 6 through 10. See the `peerDependencies` in
+[`package.json`](package.json). Use a Node.js version supported
 by your installed Nodemailer version. Nodemailer 10 bundles TypeScript declarations;
 for supported versions without bundled declarations, install a matching
 `@types/nodemailer` version in TypeScript projects.
@@ -18,11 +18,11 @@ for supported versions without bundled declarations, install a matching
 The exported `MockSentMessageInfo` type describes the mock's result, including its
 legacy placeholder envelope and the `Error` returned in `info.response` for failed sends.
 Opt into `RealisticMockSentMessageInfo` with the factory configuration below.
-For explicit mock transporter annotations, use `NodemailerMockTransporter` or
+To annotate a mock transporter, use `NodemailerMockTransporter` or
 `Transporter<MockSentMessageInfo>` to preserve the mock's result type. Standard
-Nodemailer plugins and failure checks can be passed to the mock.
+Nodemailer plugins and failure checks work with the mock.
 
-# install
+## Install
 
 Nodemailer is a peer dependency. If your application already installs it, keep its
 existing dependency and add only `nodemailer-mock` as a development dependency. For
@@ -40,7 +40,7 @@ pnpm add -D nodemailer nodemailer-mock
 yarn add -D nodemailer nodemailer-mock
 ```
 
-# module loading
+## Module loading
 
 Use `require('nodemailer-mock')` in CommonJS or
 `import nodemailermock from 'nodemailer-mock'` in ESM. The default mock is shared
@@ -53,20 +53,24 @@ const nodemailermock = getMockFor(require('nodemailer'));
 
 `getMockFor(nodemailer)` returns a new mock with its own state and uses the supplied
 Nodemailer module to create underlying transports. The optional second argument
-configures realistic results and a deterministic message ID generator. Replace `nodemailer` before
-loading application code that imports it. With Jest, inject the real module from
-`jest.requireActual('nodemailer')` in the manual mock shown below.
+configures realistic results and a deterministic message ID generator. Replace
+`nodemailer` before loading application code that imports it. With Jest, use the
+real module from `jest.requireActual('nodemailer')` in the manual mock shown below.
 
-# mock api
+## Mock API
 
-Use with test suites like [`jest`](https://www.npmjs.com/package/jest), [`mocha`](https://www.npmjs.com/package/mocha), [`vitest`](https://www.npmjs.com/package/vitest), and [`node:test`](https://nodejs.org/api/test.html). There are some special methods available on the mocked module to help with testing. They are under the `.mock` key of the mocked [`nodemailer`](https://www.npmjs.com/package/nodemailer).
+Use the mock with [`Jest`](https://www.npmjs.com/package/jest),
+[`Mocha`](https://www.npmjs.com/package/mocha),
+[`Vitest`](https://www.npmjs.com/package/vitest), or
+[`node:test`](https://nodejs.org/api/test.html). Test helpers are available under
+the mocked module's `.mock` property.
 
-## `createTransport(transportOptions?, defaults?)`
+### `createTransport(transportOptions?, defaults?)`
 
 Returns a mocked Nodemailer transporter. You can omit the options, supply a
-transport/options object, including a custom transport with its own result type,
-or use an SMTP URL. The second argument provides message
-defaults; values passed to `sendMail()` override them.
+transport or options object, including a custom transport with its own result
+type, or use an SMTP URL. The second argument sets message defaults.
+Values passed to `sendMail()` override them.
 
 ```javascript
 const nodemailermock = require('nodemailer-mock');
@@ -87,11 +91,11 @@ rejects with the error.
 `setMockedClose(false)` delegates to the underlying transport when one is available.
 Real verification can connect to the configured mail server.
 
-## realistic results and queued outcomes
+### Realistic results and queued outcomes
 
-Legacy results remain the default. Create a separate mock with `responseMode:
-'realistic'` to derive its envelope and accepted recipients from the compiled
-message. The result uses the message's `messageId`, or the configured generator
+Legacy results remain the default. Create a separate mock with
+`responseMode: 'realistic'` to derive its envelope and accepted recipients from
+the compiled message. The result uses the message's `messageId`, or the configured generator
 when one is supplied. These values describe the simulation, not actual delivery.
 
 ```javascript
@@ -136,7 +140,118 @@ and failure checks for that send and does not consume a one-time failure flag.
 result fields. `reset()` clears both kinds of override while preserving the
 factory's response mode and message ID generator.
 
-## `NodemailerMock.mock` functions
+### Offline test accounts
+
+`createTestAccount()` returns a deterministic account with reserved `.test`
+endpoints. It supports Promises and asynchronous callbacks, including the optional
+API URL argument. It never requests credentials from Ethereal. Each factory has
+its own account, and `mock.setTestAccount(account)` replaces it until reset.
+
+`getTestMessageUrl(info)` reads Ethereal's trailing `STATUS` and `MSGID` response
+fields and builds a URL using the configured account's `web` address. It returns
+`false` for ordinary mock responses. The resulting URL identifies a simulated
+message; no inbox or hosted preview is created.
+
+```javascript
+const mailer = require('nodemailer-mock').getMockFor();
+const account = await mailer.createTestAccount();
+mailer.mock.setTestAccount({ ...account, web: 'https://preview.example.test' });
+mailer.mock.setSentMessageInfo({ response: '250 OK [STATUS=sent MSGID=test-123]' });
+const info = await mailer.createTransport().sendMail({ text: 'Preview test' });
+console.log(mailer.getTestMessageUrl(info));
+// https://preview.example.test/message/test-123
+```
+
+### Message output and content validation
+
+Transport options `streamTransport: true` and `jsonTransport: true` now produce
+`info.message` through Nodemailer's offline transports. Stream output is a
+Readable, or a Buffer with `buffer: true`. JSON output is a string, or a normalized
+object with `skipEncoding: true`. Use `responseMode: 'realistic'` for a typed
+envelope; legacy envelope and result defaults still apply otherwise.
+
+MIME output includes enabled user plugins, raw content, attachments, and DKIM
+signing. JSON output follows Nodemailer's normalization and does not contain MIME
+stream transforms or DKIM signatures. Buffered output includes `messageSize` in
+bytes. Timings and other SMTP metadata can be supplied through
+`setSentMessageInfo()` or `queueResult()`, including `rejectedErrors`, `ehlo`,
+`envelopeTime`, and `messageTime`. The mock does not measure SMTP round trips.
+
+```javascript
+const mailer = require('nodemailer-mock').getMockFor(undefined, {
+  responseMode: 'realistic',
+  validateContent: true,
+});
+const transport = mailer.createTransport({ streamTransport: true, buffer: true });
+const info = await transport.sendMail({
+  from: 'sender@example.test', to: 'recipient@example.test', text: 'MIME test',
+});
+console.log(info.message.toString());
+```
+
+For ordinary mocked transports, `validateContent: true` builds and consumes the
+message before reporting success, then discards the output. This catches missing
+files, blocked file/URL access, and failing body or attachment streams. Rendering
+can read files and fetch URLs. Transport and message `disableFileAccess` and
+`disableUrlAccess` options apply. Content streams are consumed once.
+
+Stream output without validation follows Nodemailer's streaming behavior. The
+send can resolve before a content error occurs; the caller must consume the
+returned stream and handle its errors. With validation, the mock buffers the
+content first and returns a new Readable after validation succeeds. Ordinary
+sends without output or validation keep the existing behavior of recording
+options without reading content.
+
+### Delivery simulation
+
+Set factory option `simulateDelivery: true` to enable the following behavior.
+No SMTP server, provider API, or OAuth endpoint is contacted by the simulation.
+
+- With transport option `pool: true`, sends use a FIFO scheduler with
+  `maxConnections`, `maxMessages`, `rateLimit`, and `rateDelta`. `isIdle()` reports
+  immediate capacity. The transporter emits an initial `idle` event and another
+  when capacity returns. Rate limits use shared windows starting at dispatch.
+- For pooled transports, `close()` rejects queued and future sends with
+  `EPOOLCLOSED`, lets active sends finish, and emits `clear` after they drain.
+  `idleTimeout` can clear retained
+  logical connections; its simulation default is `0`, disabled. `maxMessages`
+  renews logical slots without opening connections.
+- A queued error with `code: 'ECONNECTION'` and `command: 'CONN'` marks an explicit
+  disconnect before sending. The pool retries using the next queued outcome, up
+  to `maxRequeues`, which defaults to `5`. Set `0` to disable or `-1` for unlimited
+  retries. Other failures are not retried by the pool.
+- OAuth2 calls the provider registered with `set('oauth2_provision_cb', callback)`
+  or `auth.provisionCallback`. Expiring tokens are cached by credentials and
+  provider. Token generation emits `token`. A queued `EAUTH` triggers one renewal
+  with `renew: true` and consumes the next outcome. Refresh-token and service-account
+  configurations without a provider generate deterministic offline tokens.
+- Per-message authentication applies to non-pooled transports. Pooled transports
+  use their configured authentication. `smtpCapabilities` supplies simulated
+  `info.ehlo` values. REQUIRETLS requests fail with `ETLS` unless the transport has
+  `secure: true` and capabilities include `REQUIRETLS`. TLS negotiation itself is
+  not performed. DSN options remain available in the recorded message; no delivery
+  notifications are generated.
+- Successful result overrides with no accepted recipients and at least one
+  rejected recipient fail with `EENVELOPE`. Partial acceptance still succeeds.
+
+```javascript
+const mailer = require('nodemailer-mock').getMockFor(undefined, {
+  responseMode: 'realistic', simulateDelivery: true, smtpCapabilities: ['DSN'],
+});
+const transport = mailer.createTransport({ pool: true, maxConnections: 2 });
+await transport.sendMail({ from: 'sender@example.test', to: 'recipient@example.test' });
+transport.close();
+```
+
+`reset()` cancels simulated pool timers, rejects waiting sends with `ERESET`,
+reopens retained pools, and clears token caches and account overrides. Sends that
+started earlier still settle, but cannot record mail, emit token or capacity
+events into the new state, or consume newly queued outcomes. Full transporter
+cleanup removes the public registry while held transporters remain reusable and
+participate in later resets. Manual idle controls continue to apply to ordinary
+mocks; simulated pools compute their own idle state.
+
+### `NodemailerMock.mock` functions
 
 - `reset: (options?: { clearTransporters?: boolean }) => void`
   - clears sent mail and the aggregate close count; restores failure settings, responses, mocked verify/close behavior, and disabled user plugins
@@ -151,22 +266,22 @@ factory's response mode and message ID generator.
 - `getSentMail: () => Mail.Options[]`
   - returns successfully sent message options, including applied defaults and plugin changes, since the last reset
 - `getCloseCallCount: () => number`
-  - get the number of times the `transporter.close()` was called across all instances
+  - returns the total number of `transporter.close()` calls across this mock's transporters
 - `setShouldFailOnce: (isSet?: boolean) => void`
   - sets a one-time failure for the next mocked send or verification; defaults to `true` when omitted
   - passing `false` clears the one-time and persistent failure flags
 - `isShouldFailOnce: () => boolean`
-  - returns status of `setShouldFailOnce(?)`
+  - returns whether the one-time failure flag is set
 - `setShouldFail: (isFail: boolean) => void`
-  - indicate if errors should be returned for subsequent mocked send or verification calls
+  - controls forced failures for subsequent mocked sends or verification calls
     - `true` enables forced failures
     - `false` clears forced and one-time failures; per-message checks still apply
 - `isShouldFail: () => boolean`
-  - returns status of `setShouldFail()`
+  - returns whether persistent forced failures are enabled
 - `setShouldFailCheck: (check: CheckMailMessageOrNull) => void`
-  - indicate if the specific email passed to the function should fail the call to `transporter.sendMail()` or `transport.send()`
-    - if function returns `true`, return error
-    - if function returns `false`, the normal failure flags still apply
+  - sets a function that decides whether `transporter.sendMail()` or `transport.send()` should fail for a message
+    - `true` fails the send
+    - `false` leaves the normal failure flags in effect
   - receives a Nodemailer mail message; inspect fields such as `mail.data.to`
   - runs before the normal failure flags; a failure here does not consume a one-time failure
   - pass `null` to clear the check; it is not called by `verify()`
@@ -175,15 +290,15 @@ factory's response mode and message ID generator.
 - `getShouldFailCheck: () => CheckMailMessageOrNull`
   - returns the function used to check the `MailMessage` or `null` if it is not set
 - `setMockedVerify: (isMocked: boolean) => void`
-  - determine if a call to `transport.verify()` should be mocked or passed through to `nodemailer`, defaults to `true`.
-    - if `true`, return a mocked callback or Promise result
-    - if `false`, pass through to a real `nodemailer` transport
+  - controls whether `transport.verify()` is mocked; defaults to `true`
+    - `true` returns a mocked callback or Promise result
+    - `false` delegates to the underlying Nodemailer transport when available
 - `isMockedVerify: () => boolean`
-  - returns status of `setMockedVerify(?)`
+  - returns whether verification is mocked
 - `setMockedClose: (isMocked: boolean) => void`
-  - determine if calls to `transporter.close()` should be passed through to the underlying transport, defaults to `true`.
+  - controls whether `transporter.close()` is mocked; defaults to `true`
 - `isMockedClose: () => boolean`
-  - when the result is `true` the underlying transport is not used, when `false` the call is passed through.
+  - returns `true` for mocked close calls and `false` for calls delegated to the underlying transport when available
 - `setSuccessResponse: (response: string) => void`
   - set the success message that is returned in the callback for `transporter.sendMail()` or `transport.send()`
 - `getSuccessResponse: () => string`
@@ -196,6 +311,8 @@ factory's response mode and message ID generator.
   - sets typed partial result fields for successful sends until reset; accepts the envelope type for the configured response mode
 - `queueResult({ error } | { info? })`
   - appends a failure or successful partial result for the next send; `{}` queues a success with the configured defaults
+- `setTestAccount(account)`
+  - sets the offline account returned by `createTestAccount()` until reset
 - `scheduleIsIdle: (isIdle: boolean, timeout: number) => void`
   - after `timeout` milliseconds, update the idle state of all transporters created by this mock
 - `setIsIdle: (isIdle: boolean) => void`
@@ -205,22 +322,23 @@ factory's response mode and message ID generator.
   - Nodemailer's built-in processing still runs
   - checked when each plugin runs, so it also applies to plugins already registered; `reset()` disables them
 - `isUnmockedUsePlugins: () => boolean`
-  - returns the status of `setUnmockedUsePlugins(?)`
+  - returns whether user plugins are enabled
 
-## `NodemailerMockTransporter.mock` functions
+### `NodemailerMockTransporter.mock` functions
 
 - `getPlugins: () => { [key: string]: NodemailerMockPlugin[] }`
   - returns the plugins that have been added via `transporter.use()` as arrays, keyed by step
 - `getCloseCallCount: () => number`
-  - get the number of times `close()` has been called on this transporter. this number is retained by ordinary reset and cleared by `reset({ clearTransporters: true })`.
+  - returns this transporter's `close()` call count; `reset()` retains it and `reset({ clearTransporters: true })` clears it
 - `setIdle(isIdle: boolean): void`
-  - sets the idle state of `transporter.isIdle()` and emits an `idle` event when the `isIdle` argument is `true`.
+  - sets the value returned by `transporter.isIdle()` and emits an `idle` event when `isIdle` is `true`
 
-# usage
+## Usage
 
-The mocked module behaves in a similar fashion to other transports provided by `nodemailer`.
+Create a transporter, then call `sendMail()` or `verify()` with callbacks,
+Promises, or async/await.
 
-**setup test**
+### Set up a test
 
 ```javascript
 const nodemailermock = require('nodemailer-mock');
@@ -235,7 +353,7 @@ const email = {
 };
 ```
 
-**use nodestyle callbacks**
+### Callbacks
 
 ```javascript
 // send with nodestyle callback
@@ -255,7 +373,7 @@ transport.verify(function(err, success) {
 });
 ```
 
-**use promises**
+### Promises
 
 ```javascript
 // send with promises
@@ -277,7 +395,7 @@ transport.verify()
   });
 ```
 
-**use async/await**
+### Async/await
 
 Use this inside an async function after the setup above.
 
@@ -299,7 +417,7 @@ try {
 }
 ```
 
-# example tests using mocked module
+## Example tests
 
 The [examples directory](https://github.com/doublesharp/nodemailer-mock/tree/main/examples)
 contains runnable Jest, Mocha, Vitest, and `node:test` tests. It is available in the
@@ -326,7 +444,7 @@ exports.sendEmail = async () => {
 };
 ```
 
-## example using jest
+### Example using Jest
 
 For a CommonJS Jest project, create `./__mocks__/nodemailer.js` beside
 `node_modules`, within Jest's configured roots:
@@ -376,7 +494,7 @@ test('Sends an email using mocked Nodemailer and TypeScript', async () => {
 });
 ```
 
-## example using mocha
+### Example using Mocha
 
 This CommonJS example temporarily intercepts `require('nodemailer')`. Install the
 hook before loading the application, clear its cached module, and restore the
@@ -426,9 +544,9 @@ describe('Tests that send email', () => {
 });
 ```
 
-## example using vitest
+### Example using Vitest
 
-To mock `nodemailer` using [`vitest`](https://www.npmjs.com/package/vitest), use `vi.mock()` to replace `nodemailer` with `nodemailer-mock`:
+Use Vitest's `vi.mock()` to replace `nodemailer` with `nodemailer-mock`:
 
 ```javascript
 /**
@@ -464,7 +582,7 @@ describe("Tests that send email", () => {
 });
 ```
 
-## example using node:test
+### Example using node:test
 
 Node.js's built-in test runner, [`node:test`](https://nodejs.org/api/test.html),
 supports module mocking with the `--experimental-test-module-mocks` flag. The

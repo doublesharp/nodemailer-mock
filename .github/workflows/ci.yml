@@ -8,9 +8,14 @@ on:
       - '!*' # Do not execute on tags
     paths:
       - '*.js'
+      - '*.cjs'
+      - '*.mjs'
       - '*.ts'
       - '*.json'
       - '*.yaml'
+      - '*.yml'
+      - '.gitignore'
+      - '.npmignore'
       - '.github/workflows/**'
       - 'test/**'
       - 'examples/**'
