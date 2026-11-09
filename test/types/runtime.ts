@@ -107,3 +107,12 @@ deliveryMock.mock.setSentMessageInfo({ rejectedErrors: [Object.assign(new Error(
   ehlo: ['DSN'], envelopeTime: 1, messageTime: 2, messageSize: 3, message: Buffer.from('mime') });
 const preview: string | false = deliveryMock.getTestMessageUrl({ response: '250 [STATUS=sent MSGID=test]' });
 void [account, preview];
+
+const attachmentOptions: MockOptions = {
+  allowRemoteAttachments: false,
+  resolveRemoteAttachment: async (attachment) => Buffer.from(attachment.filename || 'fixture'),
+};
+getMockFor(undefined, attachmentOptions);
+getMockFor(undefined, { resolveRemoteAttachment: () => 'fixture bytes' });
+// @ts-expect-error Attachment resolvers must return string or Buffer content.
+getMockFor(undefined, { resolveRemoteAttachment: () => 42 });

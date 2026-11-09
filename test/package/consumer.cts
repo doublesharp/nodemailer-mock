@@ -66,3 +66,6 @@ delivery.mock.setSentMessageInfo({ ehlo: ['DSN'], rejectedErrors: [new Error('re
   messageTime: 2, messageSize: 3, message: Buffer.from('mime') });
 const url: string | false = delivery.getTestMessageUrl({ response: '250 [STATUS=sent MSGID=test]' });
 void [account, url];
+
+getMockFor(nodemailer, { allowRemoteAttachments: false,
+  resolveRemoteAttachment: async (attachment) => Buffer.from(attachment.filename || 'fixture') });

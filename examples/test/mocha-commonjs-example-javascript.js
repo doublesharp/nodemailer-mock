@@ -37,4 +37,16 @@ describe('Mocha + CommonJS JavaScript', function () {
     // and it should match the to address
     expect(sentEmails[0].to).to.equal('justin@to.com');
   });
+
+  it('Renders a remote attachment using fixture bytes', async () => {
+    const mailer = nodemailermock.getMockFor(undefined, {
+      resolveRemoteAttachment: () => Buffer.from('test PDF content'),
+    });
+    const transport = mailer.createTransport({ jsonTransport: true });
+    await transport.sendMail({
+      to: 'recipient@example.test',
+      attachments: [{ filename: 'report.pdf', href: 'https://example.test/report.pdf' }],
+    });
+    expect(mailer.mock.getSentMail()[0].attachments[0].href).to.equal('https://example.test/report.pdf');
+  });
 });
