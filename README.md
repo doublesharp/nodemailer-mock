@@ -53,7 +53,7 @@ const nodemailermock = getMockFor(require('nodemailer'));
 
 `getMockFor(nodemailer)` returns a new mock with its own state and uses the supplied
 Nodemailer module to create underlying transports. The optional second argument
-configures realistic results and a deterministic message ID generator. Replace
+configures results, message IDs, content handling, and delivery simulation. Replace
 `nodemailer` before loading application code that imports it. With Jest, use the
 real module from `jest.requireActual('nodemailer')` in the manual mock shown below.
 
@@ -189,11 +189,42 @@ const info = await transport.sendMail({
 console.log(info.message.toString());
 ```
 
+HTTP(S) attachment `href` and `path` sources use empty content by default, so
+rendering a mocked email does not fetch those attachments. Filenames, content
+types, and other attachment metadata are retained. `mock.getSentMail()` keeps
+the original attachment options, including their URLs.
+
+To render fixture content, configure `resolveRemoteAttachment` on the mock
+factory. It receives the attachment options and returns a string or Buffer,
+directly or through a Promise. Strings are treated as UTF-8 fixture bytes.
+The resolver runs once per remote attachment per send when output or validation
+is requested; ordinary sends do not call it. A resolver error fails the send.
+
+```javascript
+const mailer = require('nodemailer-mock').getMockFor(undefined, {
+  resolveRemoteAttachment: (attachment) => Buffer.from(`Fixture for ${attachment.filename}`),
+});
+const transport = mailer.createTransport({ jsonTransport: true });
+await transport.sendMail({
+  to: 'recipient@example.test',
+  attachments: [{ filename: 'report.pdf', href: 'https://example.test/report.pdf' }],
+});
+console.log(mailer.mock.getSentMail()[0].attachments[0].href);
+// https://example.test/report.pdf
+```
+
+Set factory option `allowRemoteAttachments: true` to let Nodemailer fetch real
+attachment content during rendering. This restores the attachment fetching
+behavior of 2.3.0 and bypasses `resolveRemoteAttachment`.
+
 For ordinary mocked transports, `validateContent: true` builds and consumes the
 message before reporting success, then discards the output. This catches missing
-files, blocked file/URL access, and failing body or attachment streams. Rendering
-can read files and fetch URLs. Transport and message `disableFileAccess` and
-`disableUrlAccess` options apply. Content streams are consumed once.
+files, blocked file/URL access, and failing body or attachment streams. Local
+files and supplied streams retain Nodemailer's behavior. Transport and message
+`disableFileAccess` and `disableUrlAccess` options still apply; disabling URL
+access rejects URL attachments instead of substituting content. Content streams
+are consumed once. Remote attachment mocking covers `attachments` entries;
+URL-backed bodies, raw messages, and user plugins can still fetch external content.
 
 Stream output without validation follows Nodemailer's streaming behavior. The
 send can resolve before a content error occurs; the caller must consume the

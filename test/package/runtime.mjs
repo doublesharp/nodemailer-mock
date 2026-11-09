@@ -143,3 +143,24 @@ oauth.set('oauth2_provision_cb', (_user, _renew, done) => { oauthCalls++; done(n
 await oauth.sendMail({});
 assert.equal(oauthCalls, 1);
 console.log('Packaged runtime: offline helpers, rendering, validation, result metadata, pool and OAuth passed');
+
+// URL attachments must stay offline in every supported Nodemailer major.
+for (const owner of [commonjs, defaultExport]) {
+  for (const options of [{ jsonTransport: true }, { streamTransport: true, buffer: true }]) {
+    const attachment = Object.freeze({ filename: 'report.pdf', path: 'https://example.invalid/report.pdf' });
+    const offline = owner.getMockFor(nodemailer);
+    await offline.createTransport(options).sendMail({ attachments: [attachment] });
+    assert.equal(offline.mock.getSentMail()[0].attachments[0], attachment);
+    await assert.rejects(offline.createTransport({ ...options, disableUrlAccess: true }).sendMail({
+      attachments: [{ href: 'http://127.0.0.1:1/must-not-request' }],
+    }), /Url access rejected/);
+    const fixtures = owner.getMockFor(nodemailer, { resolveRemoteAttachment: () => Buffer.from('fixture bytes') });
+    const fixture = await fixtures.createTransport(options).sendMail({ attachments: [attachment] });
+    if (options.jsonTransport) {
+      assert.equal(Buffer.from(JSON.parse(fixture.message).attachments[0].content, 'base64').toString(), 'fixture bytes');
+    } else {
+      assert.match(fixture.message.toString(), /Zml4dHVyZSBieXRlcw==/);
+    }
+  }
+}
+console.log('Packaged runtime: offline remote attachments, fixtures and original options passed');

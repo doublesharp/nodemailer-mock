@@ -11,6 +11,16 @@ for 2.0.11 and 2.0.14 also include follow-up commits present in their release ta
 
 ## Unreleased
 
+## [2.3.1](https://github.com/doublesharp/nodemailer-mock/compare/v2.3.0...v2.3.1) - 2026-11-09
+
+### Fixed
+
+- Prevent HTTP(S) attachment `href` and `path` sources from making real requests
+  during mocked JSON/MIME rendering and content validation ([#35](https://github.com/doublesharp/nodemailer-mock/issues/35)).
+  Remote attachments now use empty content by default, with fixture bytes supplied
+  through `resolveRemoteAttachment` and real fetching available through
+  `allowRemoteAttachments: true`. Recorded mail retains the original attachment URLs.
+
 ## [2.3.0](https://github.com/doublesharp/nodemailer-mock/compare/v2.2.0...v2.3.0) - 2026-11-03
 
 ### Added

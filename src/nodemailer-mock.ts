@@ -15,6 +15,7 @@ import { MockTestAccounts } from './lib/test-account';
 import { renderMessage, RenderOptions } from './lib/render';
 import { MockPool } from './lib/pool';
 import { MockOAuth2, MockOAuthOptions, MockOAuthProvision } from './lib/oauth2';
+import { MockAttachments, RemoteAttachmentOptions } from './lib/attachments';
 
 export type { MockSentMessageInfo, RealisticMockSentMessageInfo, MockInfo, MockResponseMode,
   MockSmtpError } from './lib/messages';
@@ -36,7 +37,7 @@ export type MockOptions<Mode extends MockResponseMode = 'legacy'> = {
   validateContent?: boolean;
   simulateDelivery?: boolean;
   smtpCapabilities?: string[];
-} & ('legacy' extends Mode ? unknown : { responseMode: Mode });
+} & RemoteAttachmentOptions & ('legacy' extends Mode ? unknown : { responseMode: Mode });
 
 // Keep optional legacy arguments while requiring the discriminator for realistic results.
 type MockArguments<Mode extends MockResponseMode> =
@@ -398,6 +399,7 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
   public readonly version = '0.0.0';
   private readonly options: Record<string, unknown>;
   private readonly settings: MockOptions<Mode>;
+  public readonly attachments: MockAttachments;
   private readonly pool?: MockPool;
   private simulationGeneration = 0;
   private readonly oauth = new MockOAuth2((token) => this.nodemailer?.emit('token', token));
@@ -451,6 +453,8 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       this.realmailer = mailer.createTransport(transport ?? {}, options);
     }
     this.options = (this.realmailer?.options ?? (typeof transport === 'object' ? transport : {})) as Record<string, unknown>;
+    this.attachments = new MockAttachments(settings,
+      Boolean(this.options.streamTransport || this.options.jsonTransport || settings.validateContent));
     if (settings.simulateDelivery && this.options.pool) {
       this.pool = new MockPool(this.options, (event) => this.nodemailer?.emit(event));
     }
@@ -531,7 +535,7 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
         // JSON normalization reads mail.data rather than the MIME header.
         email.data = { ...email.data, messageId: info.messageId };
       }
-      const rendered = await renderMessage(email, {
+      const rendered = await renderMessage(await this.attachments.forRendering(email), {
         ...this.options as RenderOptions, validateContent: this.settings.validateContent,
       });
       info = { ...rendered, ...info };
@@ -697,6 +701,22 @@ export class NodemailerMockMail<Mode extends MockResponseMode = 'legacy'>
     return this.transporter.withSendContext(() => callback
       ? super.sendMail(mailOptions, callback)
       : super.sendMail(mailOptions));
+  }
+
+  // Nodemailer compiles MIME between the compile and stream plugin stages. Substitute
+  // after user compile plugins, then restore data before stream plugins and recording.
+  _processPlugins(step: string, mail: MailMessage<MockInfo<Mode>>,
+    callback: Parameters<NodemailerMockPlugin>[1]): void {
+    if (step === 'stream') this.transporter.attachments.restore(mail);
+    const prototype = Mail.prototype as Mail<MockInfo<Mode>> & {
+      _processPlugins: NodemailerMockMail<Mode>['_processPlugins'];
+    };
+    prototype._processPlugins.call(this, step, mail, (error) => {
+      if (error || step !== 'compile') return callback(error);
+      const pending = this.transporter.attachments.prepare(mail);
+      if (pending) pending.then(() => callback(), callback);
+      else callback();
+    });
   }
 
   use(step: string, plugin: NodemailerMockPlugin) {
