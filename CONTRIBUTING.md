@@ -22,9 +22,11 @@ unrelated changes out of your work. Installation runs `prepare` to rebuild `dist
 
 Build output normally goes to `dist/`. For local output redirection, `dist/` may
 be a directory symlink; `clean` and `prepare` preserve it and recreate a missing
-target directory. Package checks stage real copies of symlinked build files
-before packing. Temporary directories follow `TMPDIR` when set in your local
-shell. These local paths do not need to be committed.
+target directory. The target must be strictly inside
+`/Volumes/Scratch/nodemailer-mock/build` by default. Set
+`NODEMAILER_MOCK_DIST_ROOT` to the parent directory of a different local build
+location before cleaning or packing. Package checks stage the redirected build
+files before packing. Temporary directories follow `TMPDIR` when set.
 
 ## Make the change
 
@@ -89,6 +91,7 @@ git diff --check
 `quality` runs ESLint, builds and checks TypeScript, including consumer fixtures,
 and runs Knip. `nyc` rebuilds and runs the test suite, requiring 100% statements,
 branches, functions, and lines for every source file under `src/`.
+Set `NYC_TEMP_DIR` to move nyc's intermediate coverage data out of the checkout.
 `examples` runs Jest, Mocha, Node.js's test runner, and Vitest. Run these on both
 Node.js 22 and 24 for runtime, dependency, or tooling changes. For a docs-only
 change, verify affected commands, relative links, and formatting; rerun executable
@@ -106,6 +109,10 @@ CI also runs package consumers on Node.js 22 and 24 with Nodemailer 6.10.1,
 7.0.13, 8.0.11, 9.1.1, and 10.0.9. Other patch versions are not covered by this
 matrix. For compatibility or packaging changes, run the final-version package
 checks in the [release guide](docs/RELEASING.md).
+
+Run `pnpm run formal` to check both the TLA+ models and Lean proofs. Run
+`pnpm run formal:tla` or `pnpm run formal:lean` to check either separately.
+The models and proofs live in [`formal/`](formal/).
 
 ## Submit a pull request
 

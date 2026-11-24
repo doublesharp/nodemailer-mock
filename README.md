@@ -9,11 +9,11 @@ Inspect sent messages and simulate failures without sending email.
 
 [Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
 
-Supports Nodemailer 6 through 10. See the `peerDependencies` in
-[`package.json`](package.json). Use a Node.js version supported
-by your installed Nodemailer version. Nodemailer 10 bundles TypeScript declarations;
-for supported versions without bundled declarations, install a matching
-`@types/nodemailer` version in TypeScript projects.
+Compatible with Nodemailer 6 through 10. Upstream ships security fixes on its
+current major, 10.x. Use its latest patched release and a Node.js version it
+supports. Nodemailer 10 bundles TypeScript declarations. For older versions,
+install a matching `@types/nodemailer` package in TypeScript projects. See the
+[Nodemailer security policy](https://github.com/nodemailer/nodemailer/security).
 
 The exported `MockSentMessageInfo` type describes the mock's result, including its
 legacy placeholder envelope and the `Error` returned in `info.response` for failed sends.
@@ -70,7 +70,9 @@ the mocked module's `.mock` property.
 Returns a mocked Nodemailer transporter. You can omit the options, supply a
 transport or options object, including a custom transport with its own result
 type, or use an SMTP URL. The second argument sets message defaults.
-Values passed to `sendMail()` override them.
+Values passed to `sendMail()` override ordinary defaults. Setting
+`disableFileAccess` or `disableUrlAccess` at any level keeps that restriction
+enabled when the mock renders or validates content or processes `attachDataUrls`.
 
 ```javascript
 const nodemailermock = require('nodemailer-mock');
@@ -230,8 +232,8 @@ Stream output without validation follows Nodemailer's streaming behavior. The
 send can resolve before a content error occurs; the caller must consume the
 returned stream and handle its errors. With validation, the mock buffers the
 content first and returns a new Readable after validation succeeds. Ordinary
-sends without output or validation keep the existing behavior of recording
-options without reading content.
+sends without output, validation, or `attachDataUrls` record options without
+reading content.
 
 ### Delivery simulation
 
@@ -447,6 +449,13 @@ try {
   console.log("Error!", err);
 }
 ```
+
+## Formal verification
+
+From a source checkout, run `pnpm run formal` for both TLA+ model checks and
+Lean proofs. Run `pnpm run formal:tla` or `pnpm run formal:lean` to check
+either separately. The [contributor guide](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
+lists the other validation commands.
 
 ## Example tests
 
