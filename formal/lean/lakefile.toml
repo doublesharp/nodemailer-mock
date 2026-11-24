@@ -1,0 +1,5 @@
+name = "nodemailer-mock-formal"
+defaultTargets = ["Formal"]
+
+[[lean_lib]]
+name = "Formal"
