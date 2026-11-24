@@ -9,7 +9,8 @@ export function copyInfo<Mode extends MockResponseMode>(info: Partial<MockInfo<M
   }
   if (copy.rejectedErrors) copy.rejectedErrors = [...copy.rejectedErrors];
   if (Buffer.isBuffer(copy.message)) copy.message = Buffer.from(copy.message);
-  else if (copy.message && typeof copy.message === 'object' && !('pipe' in copy.message)) {
+  else if (copy.message && typeof copy.message === 'object' &&
+    typeof (copy.message as { pipe?: unknown }).pipe !== 'function') {
     copy.message = structuredClone(copy.message);
   }
   if (copy.envelope && typeof copy.envelope === 'object') {

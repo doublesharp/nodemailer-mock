@@ -40,6 +40,68 @@ describe('offline OAuth2 simulation', () => {
     }
   });
 
+  it('rejects zero and non-finite expiries and uses a finite future supplied token', async () => {
+    const auth = new MockOAuth2(() => undefined);
+    const options = { type: 'OAuth2', user: 'a@test', accessToken: 'supplied' };
+    for (const expires of [0, NaN, Infinity]) {
+      await assert.rejects(auth.authorize({ ...options, expires }), { code: 'EAUTH' });
+      let calls = 0;
+      const provider: MockOAuthProvision = (_user, _renew, done) => done(null, String(++calls), expires);
+      for (const expected of ['1', '2']) {
+        assert.equal((await auth.authorize({ type: 'OAuth2', user: 'b@test' }, provider))?.accessToken, expected);
+      }
+    }
+    assert.equal((await auth.authorize({ ...options, expires: Date.now() + 60000 }))?.accessToken, 'supplied');
+    assert.equal(await auth.authorize({ type: 7 } as unknown as typeof options), undefined);
+  });
+
+  it('invalidates a cached token even when its renewal fails', async () => {
+    const auth = new MockOAuth2(() => undefined);
+    const options = { type: 'OAuth2', user: 'a@test' };
+    let calls = 0;
+    const provider: MockOAuthProvision = (_user, renew, done) => {
+      if (renew) done(new Error('renewal failed'));
+      else done(null, String(++calls), Date.now() + 60000);
+    };
+    assert.equal((await auth.authorize(options, provider))?.accessToken, '1');
+    await assert.rejects(auth.authorize(options, provider, true), /renewal failed/);
+    assert.equal((await auth.authorize(options, provider))?.accessToken, '2');
+  });
+
+  it('keeps a renewal ahead of a slow provision, without suppressing other users', async () => {
+    const events: MockToken[] = [];
+    const auth = new MockOAuth2((token) => events.push(token));
+    let resume!: () => void;
+    const provider: MockOAuthProvision = (user, renew, done) => {
+      if (user === 'b@test' || renew) done(null, user, Date.now() + 60000);
+      else resume = () => done(null, 'old', Date.now() + 60000);
+    };
+    const options = { type: 'OAuth2', user: 'a@test' };
+    const pending = auth.authorize(options, provider);
+    await auth.authorize(options, provider, true);
+    await auth.authorize({ ...options, user: 'b@test' }, provider);
+    resume();
+    assert.equal((await pending)?.accessToken, 'old');
+    assert.equal((await auth.authorize(options, provider))?.accessToken, 'a@test');
+    assert.deepEqual(events.map((token) => token.accessToken), ['a@test', 'b@test']);
+  });
+
+  it('refreshes cached entries that expire after provisioning', async () => {
+    const auth = new MockOAuth2(() => undefined);
+    const options = { type: 'OAuth2', user: 'a@test' };
+    let now = 100;
+    const clock = (await import('node:test')).mock.method(Date, 'now', () => now);
+    try {
+      let calls = 0;
+      const provider: MockOAuthProvision = (_user, _renew, done) => done(null, String(++calls), now + 1);
+      assert.equal((await auth.authorize(options, provider))?.accessToken, '1');
+      now++;
+      assert.equal((await auth.authorize(options, provider))?.accessToken, '2');
+    } finally {
+      clock.mock.restore();
+    }
+  });
+
   it('generates deterministic offline refresh and service-account tokens', async () => {
     const events: MockToken[] = [];
     const auth = new MockOAuth2((token) => events.push(token));

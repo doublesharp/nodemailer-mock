@@ -46,9 +46,14 @@ export class MockTestAccounts {
     for (const match of text.slice(open + 1, -1).matchAll(/\b([A-Z0-9]+)=([^\s]+)/g)) {
       properties.set(match[1], match[2]);
     }
-    return properties.has('STATUS') && properties.has('MSGID')
-      ? `${this.account.web}/message/${properties.get('MSGID')}`
-      : false;
+    const msgId = properties.get('MSGID');
+    // Even escaped dots form special path segments in WHATWG URLs.
+    if (!properties.has('STATUS') || !msgId || msgId === '.' || msgId === '..') return false;
+    try {
+      return `${this.account.web.replace(/\/+$/, '')}/message/${encodeURIComponent(msgId)}`;
+    } catch {
+      return false;
+    }
   };
 
   setAccount(account: Nodemailer.TestAccount): void {
