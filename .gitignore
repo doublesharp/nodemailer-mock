@@ -35,6 +35,9 @@ node_modules
 .doublcov
 
 dist
+formal/lean/.lake
+formal/lean/lake-manifest.json
+formal/tla/states
 
 # Local planning documents
 /docs/superpowers/

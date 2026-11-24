@@ -2,8 +2,10 @@ import { Readable } from 'node:stream';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 import StreamTransport from 'nodemailer/lib/stream-transport';
 import JSONTransport from 'nodemailer/lib/json-transport';
+import { AccessPolicy, assertContentAccess, assertMessageAccess, enforcedAccessPolicy,
+  mergeAccessPolicy } from './access-policy';
 
-export interface RenderOptions {
+export interface RenderOptions extends AccessPolicy {
   streamTransport?: boolean;
   jsonTransport?: boolean;
   buffer?: boolean;
@@ -36,19 +38,7 @@ function copyData<T>(value: T, copies = new WeakMap<object, object>()): T {
 async function validateRaw<T>(mail: MailMessage<T>): Promise<void> {
   const raw = mail.data.raw;
   if (raw === undefined || raw === null) return;
-  // Older peers do not enforce the access flags in MailMessage.resolveContent.
-  const source = (typeof raw === 'object' && 'content' in raw ? raw.content : raw) as
-    { pipe?: unknown; path?: string; href?: string };
-  if (source && typeof source === 'object' && typeof source.pipe !== 'function') {
-    const path = source.href || source.path;
-    if (path && !/^data:/i.test(path)) {
-      const url = Boolean(source.href) || /^https?:\/\//i.test(path);
-      if (url ? mail.data.disableUrlAccess : mail.data.disableFileAccess) {
-        throw Object.assign(new Error(`${url ? 'Url' : 'File'} access rejected for ${path}`),
-          { code: url ? 'EURLACCESS' : 'EFILEACCESS' });
-      }
-    }
-  }
+  assertContentAccess(mail.data, raw);
   const value = await new Promise<Buffer | string>((resolve, reject) => {
     mail.resolveContent(mail.data, 'raw', (error, result) => {
       if (error) reject(error);
@@ -60,6 +50,10 @@ async function validateRaw<T>(mail: MailMessage<T>): Promise<void> {
 
 /** Render the existing compiled message using Nodemailer's offline transports. */
 export async function renderMessage<T>(mail: MailMessage<T>, options: RenderOptions): Promise<RenderResult> {
+  if (!options.streamTransport && !options.jsonTransport && !options.validateContent) return {};
+  const policy = mergeAccessPolicy(options, mail.data);
+  assertMessageAccess(policy, mail.data);
+  mail.data = { ...mail.data, ...enforcedAccessPolicy(policy) };
   if (!options.streamTransport && options.jsonTransport) {
     const isolated = Object.assign(Object.create(Object.getPrototypeOf(mail)), mail,
       { data: copyData(mail.data) }) as MailMessage<T>;
@@ -74,8 +68,6 @@ export async function renderMessage<T>(mail: MailMessage<T>, options: RenderOpti
     return { message: info.message,
       ...(typeof info.message === 'string' ? { messageSize: Buffer.byteLength(info.message) } : {}) };
   }
-  if (!options.streamTransport && !options.validateContent) return {};
-
   const transport = new StreamTransport({ streamTransport: true,
     buffer: options.buffer || options.validateContent, newline: options.newline });
   const info = await new Promise<StreamTransport.SentMessageInfo>((resolve, reject) => {

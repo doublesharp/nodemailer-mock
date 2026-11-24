@@ -42,6 +42,7 @@ src
 scripts
 mjs
 examples
+formal
 test
 .gitignore
 .mocharc.json

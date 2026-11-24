@@ -10,4 +10,5 @@ module.exports = {
   include: ['src/**/!(*.test.*).[tj]s?(x)'],
   reporter: ['html', 'lcov', 'text', 'cobertura', 'text-summary'],
   'report-dir': 'coverage',
+  'temp-dir': process.env.NYC_TEMP_DIR || '.nyc_output',
 };

@@ -314,6 +314,66 @@ describe('offline delivery pool', () => {
     await assert.rejects(pool.run(async () => 2), { code: 'EPOOLCLOSED' });
   });
 
+  it('does not drain again when job settlement resets the pool', async () => {
+    const pool = new MockPool({ maxConnections: 1 }, () => {});
+    const drain = nodeMock.method(pool as unknown as { drain: () => void }, 'drain');
+    try {
+      const value = {
+        get then() {
+          if (pool.isIdle()) pool.reset();
+          return undefined;
+        },
+      };
+      assert.equal(await pool.run(async () => value), value);
+      assert.equal(drain.mock.callCount(), 1);
+      assert.equal(await pool.run(async () => 2), 2);
+    } finally {
+      drain.mock.restore();
+      pool.close();
+    }
+  });
+
+  for (const options of [{ idleTimeout: 60000 }, { rateLimit: 1, rateDelta: 60000 }]) {
+    it(`ignores the captured ${options.idleTimeout ? 'idle' : 'rate'} callback after close`, async () => {
+      const timers = nodeMock.method(global, 'setTimeout');
+      const events: string[] = [];
+      const pool = new MockPool(options, (event) => events.push(event));
+      const drain = nodeMock.method(pool as unknown as { drain: () => void }, 'drain');
+      try {
+        await pool.run(async () => 1);
+        const stale = timers.mock.calls[0].arguments[0];
+        const drains = drain.mock.callCount();
+        pool.close();
+        stale();
+        await flush();
+        assert.equal(drain.mock.callCount(), drains);
+        assert.deepEqual(events, ['clear']);
+      } finally {
+        pool.reset();
+        drain.mock.restore();
+        timers.mock.restore();
+      }
+    });
+  }
+
+  it('caps the rate timer delay when the wall clock moves backwards', async () => {
+    const clock = nodeMock.method(Date, 'now', () => 100);
+    const timers = nodeMock.method(global, 'setTimeout', () => undefined as unknown as NodeJS.Timeout);
+    const limit = 2147483647;
+    const pool = new MockPool({ rateLimit: 1, rateDelta: limit }, () => {});
+    try {
+      // The fourth time read is the rate timer delay calculation, after the window is set.
+      for (const [index, now] of [100, 100, 50, 50].entries()) clock.mock.mockImplementationOnce(() => now, index);
+      await pool.run(async () => 1);
+      assert.ok(timers.mock.callCount() > 0);
+      assert.equal(timers.mock.calls[0].arguments[1], limit);
+    } finally {
+      pool.reset();
+      timers.mock.restore();
+      clock.mock.restore();
+    }
+  });
+
   it('reset cancels rate and idle timers and reopens a closed pool', async () => {
     nodeMock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const events: string[] = [];
@@ -330,6 +390,23 @@ describe('offline delivery pool', () => {
     nodeMock.timers.tick(1000);
     await flush();
     assert.deepEqual(events, []);
+  });
+
+  it('does not requeue into a new generation when an error getter resets reentrantly', async () => {
+    const pool = new MockPool({ maxConnections: 1, maxRequeues: 1 }, () => {});
+    let resets = 0;
+    const error = Object.assign(new Error('reentrant disconnect'), { command: 'CONN' });
+    Object.defineProperty(error, 'code', {
+      get() {
+        if (++resets === 1) pool.reset();
+        return 'ECONNECTION';
+      },
+    });
+    await assert.rejects(pool.run(async () => { throw error; }), (actual) => actual === error);
+    await flush();
+    assert.equal(pool.isIdle(), true);
+    assert.equal(await pool.run(async () => 'fresh'), 'fresh');
+    pool.close();
   });
 
   it('sanitizes invalid numeric limits so tasks cannot become stuck', async () => {

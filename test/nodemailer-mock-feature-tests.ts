@@ -105,6 +105,87 @@ describe('documented Nodemailer features through the public mock', () => {
     assert.equal((await transport.sendMail(message)).message, 'string output');
   });
 
+  it('copies message objects with own or inherited non-function pipe properties', async () => {
+    const instance = library.getMockFor();
+    const transport = instance.createTransport();
+    const configured = { pipe: false, nested: { value: 'configured' } };
+    const queued = Object.assign(Object.create({ pipe: 'metadata' }), { nested: { value: 'queued' } });
+    instance.mock.setSentMessageInfo({ message: configured });
+    instance.mock.queueResult({ info: { message: queued } });
+    configured.nested.value = 'changed';
+    queued.nested.value = 'changed';
+    assert.deepEqual((await transport.sendMail(message)).message, { nested: { value: 'queued' } });
+    const first = await transport.sendMail(message);
+    assert.deepEqual(first.message, { pipe: false, nested: { value: 'configured' } });
+    (first.message as typeof configured).nested.value = 'returned';
+    assert.deepEqual((await transport.sendMail(message)).message, { pipe: false, nested: { value: 'configured' } });
+  });
+
+  it('creates a transport when the peer supplies no options for a null transport', async () => {
+    const peer = { ...library.nodemailer, createTransport: () => ({}) } as typeof library.nodemailer;
+    const instance = library.getMockFor(peer);
+    const transport = instance.createTransport(null as unknown as library.NodemailerMockTransportInput);
+    assert.ok((await transport.sendMail(message)).messageId);
+  });
+
+  it('handles non-string auth types and preserves falsy OAuth failure causes', async () => {
+    const instance = library.getMockFor(undefined, { simulateDelivery: true });
+    const transport = instance.createTransport();
+    const send = (auth: object) => transport.sendMail({ ...message, auth } as typeof message);
+    assert.ok((await send({ type: 7 })).messageId);
+    for (const cause of [null, undefined]) {
+      instance.mock.setShouldFailCheck(() => { throw cause; });
+      await assert.rejects(send({ type: 'OAuth2', user: 'sender@test', accessToken: 'fixture' }), (error: Error) =>
+        error.message === 'Failure check threw a non-Error value' && error.cause === cause);
+    }
+  });
+
+  it('builds fresh response state when a retry fails before configuration', async () => {
+    const disconnect = Object.assign(new Error('Disconnected'), { code: 'ECONNECTION', command: 'CONN' });
+    const failure = new Error('Second attempt failed');
+    const instance = library.getMockFor(undefined, { simulateDelivery: true, responseMode: 'realistic' });
+    instance.mock.setUnmockedUsePlugins(true);
+    const transport = instance.createTransport({ pool: true, jsonTransport: true, maxRequeues: 1 });
+    transport.use('stream', (mail, done) => {
+      const content = new Readable({ read() { this.destroy(disconnect); } });
+      mail.data.attachments = [{ content }];
+      done();
+    });
+    instance.mock.queueResult({ info: { messageId: '<first-attempt@test>' } });
+    instance.mock.queueResult({ error: failure });
+    await new Promise<void>((resolve, reject) => transport.sendMail(message, (error, info) => {
+      try {
+        assert.equal(error, failure);
+        assert.equal(info.messageId, message.messageId);
+        resolve();
+      } catch (cause) { reject(cause); }
+    }));
+  });
+
+  it('keeps bodies, credentials, tokens, rendered output, and error details out of debug logs', () => {
+    const script = `
+      const { getMockFor } = require('./src/nodemailer-mock');
+      const instance = getMockFor(undefined, { simulateDelivery: true });
+      const auth = { type: 'OAuth2', user: 'test@example.test', accessToken: 'private-token', pass: 'private-password' };
+      const transport = instance.createTransport({ jsonTransport: true }, { auth });
+      (async () => {
+        await transport.sendMail({ text: 'private-body' });
+        instance.mock.setSentMessageInfo({ message: 'private-rendered-result' });
+        await transport.sendMail({ text: 'private-body' });
+        instance.mock.setShouldFailCheck(() => { throw new Error('private-error-detail'); });
+        await transport.sendMail({ text: 'private-body' }).catch(() => {});
+      })().catch(error => { console.error(error); process.exitCode = 1; });
+    `;
+    const result = spawnSync(process.execPath, ['-r', 'ts-node/register', '-e', script], {
+      env: { ...process.env, DEBUG: 'nodemailer-mock' }, encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stderr, /createTransport/);
+    assert.match(result.stderr, /transporter\.send.*SUCCESS/);
+    assert.match(result.stderr, /transporter\.send.*FAIL/);
+    assert.doesNotMatch(result.stderr, /private-(?:token|password|body|rendered-result|error-detail)/);
+  });
+
   it('forgets collected simulation transports when resetting', () => {
     const instance = library.getMockFor(undefined, { simulateDelivery: true });
     instance.createTransport();

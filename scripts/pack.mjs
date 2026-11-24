@@ -3,6 +3,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, rmSync } from 'n
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { distTarget } from './dist-target.mjs';
 
 function pack(root, args) {
   return JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', ...args], {
@@ -12,7 +13,9 @@ function pack(root, args) {
 
 /** Pack without lifecycle scripts or dependency installation in the source checkout. */
 export function packPackage(root, destination) {
-  if (!lstatSync(join(root, 'dist')).isSymbolicLink()) {
+  const dist = distTarget(root);
+  if (!dist) {
+    lstatSync(join(root, 'dist'));
     return pack(root, ['--pack-destination', destination]);
   }
   // npm omits symlinks. Stage only publishable files plus the redirected build.
@@ -27,7 +30,9 @@ export function packPackage(root, destination) {
     for (const name of ['.npmignore', '.gitignore']) {
       if (existsSync(join(root, name))) cpSync(join(root, name), join(staging, name));
     }
-    cpSync(join(root, 'dist'), join(staging, 'dist'), { recursive: true, dereference: true });
+    cpSync(dist, join(staging, 'dist'), {
+      recursive: true, filter: (source) => !lstatSync(source).isSymbolicLink(),
+    });
     return pack(staging, ['--pack-destination', destination]);
   } finally {
     rmSync(staging, { recursive: true, force: true });

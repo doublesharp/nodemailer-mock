@@ -142,10 +142,10 @@ export class MockPool {
     if (!this.closed && this.rateBlocked() && !this.rateTimer) {
       const generation = this.generation;
       this.rateTimer = setTimeout(() => {
-        if (generation !== this.generation) return;
+        if (generation !== this.generation || this.closed) return;
         this.rateTimer = undefined;
         this.drain();
-      }, Math.max(1, this.rateDelta - (Date.now() - this.rateStarted!)));
+      }, Math.min(this.rateDelta, Math.max(1, this.rateDelta - Math.max(0, Date.now() - this.rateStarted!))));
     }
     this.updateIdle();
     this.scheduleIdleClear();
@@ -167,7 +167,8 @@ export class MockPool {
       job.resolve(value);
     } else {
       const error = value as { code?: string; command?: string } | null;
-      if (!this.closed && error?.code === 'ECONNECTION' && error.command === 'CONN' &&
+      const disconnect = error?.code === 'ECONNECTION' && error.command === 'CONN';
+      if (generation === this.generation && !this.closed && disconnect &&
         (this.maxRequeues === -1 || job.requeues < this.maxRequeues)) {
         job.requeues++;
         this.queue.push(job);
@@ -183,6 +184,7 @@ export class MockPool {
         job.reject(value);
       }
     }
+    if (generation !== this.generation) return;
     if (this.closed) {
       if (!this.active) this.clearClosed();
     } else {
@@ -207,7 +209,7 @@ export class MockPool {
       !this.connections.length || this.idleTimer) return;
     const generation = this.generation;
     this.idleTimer = setTimeout(() => {
-      if (generation !== this.generation) return;
+      if (generation !== this.generation || this.closed) return;
       this.idleTimer = undefined;
       this.connections = [];
       this.emit('clear');

@@ -1,14 +1,15 @@
-import { lstatSync, mkdirSync, readdirSync, readlinkSync, rmSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { distTarget } from './dist-target.mjs';
 
-const output = resolve('dist');
-if (lstatSync(output, { throwIfNoEntry: false })?.isSymbolicLink()) {
+const root = resolve('.');
+const target = distTarget(root);
+if (target) {
   // Keep local output redirection, including a link whose target was removed.
-  const target = resolve(dirname(output), readlinkSync(output));
   mkdirSync(target, { recursive: true });
   for (const entry of readdirSync(target)) {
     rmSync(join(target, entry), { recursive: true, force: true });
   }
 } else {
-  rmSync(output, { recursive: true, force: true });
+  rmSync(join(root, 'dist'), { recursive: true, force: true });
 }

@@ -112,6 +112,16 @@ describe('offline test account helpers', () => {
     }
   });
 
+  it('uses one message path segment for IDs containing URL syntax', () => {
+    const helper = new MockTestAccounts();
+    helper.setAccount({ ...configuredAccount(), web: 'https://mail.example.test/base///' });
+    assert.equal(helper.getTestMessageUrl({ response: '250 OK [STATUS=OK MSGID=../../admin?source=mock#frag]' }),
+      'https://mail.example.test/base/message/..%2F..%2Fadmin%3Fsource%3Dmock%23frag');
+    for (const id of ['.', '..', '\ud800']) {
+      assert.equal(helper.getTestMessageUrl({ response: `250 OK [STATUS=OK MSGID=${id}]` }), false);
+    }
+  });
+
   it('returns false for malformed, missing, and error responses', () => {
     const helper = new MockTestAccounts();
     for (const info of [null, undefined, {}, { response: '' }, { response: new Error('failed') },

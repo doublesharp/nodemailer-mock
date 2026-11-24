@@ -216,6 +216,67 @@ describe('remote attachment mocking', () => {
     assert.equal(requests, 0);
   });
 
+  it('isolates WHATWG URL spellings and derives filenames from the pathname', async () => {
+    const mailer = library.getMockFor(undefined, { resolveRemoteAttachment: () => 'fixture' });
+    const transport = mailer.createTransport({ jsonTransport: true });
+    for (const [source, filename] of [
+      [' http://example.test/space.txt ', 'space.txt'],
+      ['\thttp://example.test/tab.txt', 'tab.txt'],
+      ['\u00a0http://127.0.0.1:9/nbsp.txt', 'nbsp.txt'],
+      ['\ufeffhttp://127.0.0.1:9/bom.txt', 'bom.txt'],
+      ['\u0000\u00a0\ufeffhttp://127.0.0.1:9/mixed.txt', 'mixed.txt'],
+      ['http:127.0.0.1:12345/slashless.txt', 'slashless.txt'],
+      [String.raw`http:\\example.test\backslash.txt`, 'backslash.txt'],
+      ['https://example.test/fragment.txt?q=1#part', 'fragment.txt'],
+      [new URL('https://example.test/object.txt'), 'object.txt'],
+      [new String('http://127.0.0.1:9/boxed-href.txt'), 'boxed-href.txt'],
+      ['https://example.test/', /^attachment-1\./],
+    ] as const) {
+      const attachment = { href: source as string };
+      const info = await transport.sendMail({ attachments: [attachment] });
+      const rendered = JSON.parse(await output(info)).attachments[0];
+      if (typeof filename === 'string') assert.equal(rendered.filename, filename);
+      else assert.match(rendered.filename, filename);
+      assert.equal(Buffer.from(rendered.content, 'base64').toString(), 'fixture');
+      assert.equal(mailer.mock.getSentMail().at(-1)!.attachments![0], attachment);
+    }
+    const boxedPath = { path: new String('http://127.0.0.1:9/boxed-path.txt') as unknown as string };
+    const boxedInfo = await transport.sendMail({ attachments: [boxedPath] });
+    assert.equal(JSON.parse(await output(boxedInfo)).attachments[0].filename, 'boxed-path.txt');
+    for (const mode of [
+      { transport: { streamTransport: true, buffer: true }, settings: {} },
+      { transport: {}, settings: { validateContent: true } },
+    ]) {
+      const checkMailer = library.getMockFor(undefined, mode.settings);
+      const checkTransport = checkMailer.createTransport(mode.transport);
+      for (const attachment of [
+        { href: '\u00a0http://127.0.0.1:9/nbsp.txt' },
+        { href: '\ufeffhttp://127.0.0.1:9/bom.txt' },
+        { href: new String('http://127.0.0.1:9/boxed-href.txt') as unknown as string },
+        { path: new String('http://127.0.0.1:9/boxed-path.txt') as unknown as string },
+      ]) {
+        await checkTransport.sendMail({ attachments: [attachment] });
+      }
+    }
+    assert.equal(requests, 0);
+  });
+
+  it('uses the local path in JSON, MIME, and validation while recording both inputs', async () => {
+    for (const mode of modes.slice(1)) {
+      const mailer = library.getMockFor(undefined, mode.settings);
+      const transport = mailer.createTransport(mode.transport);
+      const attachment = Object.freeze({ path: __filename, href: 'https://example.test/unused.txt' });
+      const info = await transport.sendMail({ attachments: [attachment] });
+      if (mode.name === 'JSON') {
+        assert.equal(JSON.parse(await output(info)).attachments[0].filename, 'nodemailer-mock-attachment-tests.ts');
+      } else {
+        assert.ok(info.messageSize || (await output(info)).includes('nodemailer-mock-attachment-tests.ts'));
+      }
+      assert.equal(mailer.mock.getSentMail()[0].attachments![0], attachment);
+    }
+    assert.equal(requests, 0);
+  });
+
   it('mocks JSON attachments added by stream plugins and tolerates removed attachments', async () => {
     for (const remove of [false, true]) {
       const mailer = library.getMockFor();

@@ -11,6 +11,35 @@ for 2.0.11 and 2.0.14 also include follow-up commits present in their release ta
 
 ## Unreleased
 
+## [2.3.2](https://github.com/doublesharp/nodemailer-mock/compare/v2.3.1...v2.3.2) - 2026-11-23
+
+### Added
+
+- Add `pnpm run formal` and individual commands for TLA+ and Lean 4 formal verification.
+
+### Fixed
+
+- Use the local attachment path consistently in JSON and MIME, and derive
+  remote attachment filenames from the URL pathname.
+- Clone configured and queued message objects with non-function `pipe` fields.
+- Reset response state on pool retries, fence reentrant error-getter resets,
+  discard stale pool callbacks, and clamp rate timers when the wall clock moves backwards.
+- Reject expired and non-finite OAuth2 expiries, invalidate failed renewals, and
+  keep stale provisions from overwriting newer tokens.
+- Handle null transport options, non-string auth types, and falsy failures in
+  OAuth2 delivery simulation.
+
+### Security
+
+- Enforce file and URL access restrictions monotonically before compiling or
+  rendering content, including with older Nodemailer peers.
+- Isolate remote attachments written with alternate HTTP(S) URL spellings
+  (including NBSP/BOM prefixes, slashless URLs, `URL` objects, and boxed strings).
+- Keep credentials, tokens, mail bodies, and rendered content out of debug logs.
+- Encode test message IDs as URL path segments and reject dot segments.
+- Restrict redirected `dist` symlink targets before cleaning or packing.
+- Update the development Nodemailer baseline to 10.6.1.
+
 ## [2.3.1](https://github.com/doublesharp/nodemailer-mock/compare/v2.3.0...v2.3.1) - 2026-11-09
 
 ### Fixed
