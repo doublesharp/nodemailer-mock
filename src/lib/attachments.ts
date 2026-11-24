@@ -1,6 +1,7 @@
 import Mail from 'nodemailer/lib/mailer';
 import MailMessage from 'nodemailer/lib/mailer/mail-message';
 import { detectMimeType } from 'nodemailer/lib/mime-funcs';
+import { parseRemoteUrl, unwrapString } from './access-policy';
 
 export interface RemoteAttachmentOptions {
   /** Fetch remote attachments through Nodemailer instead of substituting test content. */
@@ -24,22 +25,18 @@ export class MockAttachments {
     const attachments = mail.data.attachments;
     if (!attachments) return;
     const remote = attachments.flatMap((attachment) => {
-      const url = attachment.path || attachment.href;
-      return typeof url === 'string' && /^https?:\/\//i.test(url) ? [{ attachment, url }] : [];
+      const selected = unwrapString(attachment.path) || attachment.href;
+      const url = parseRemoteUrl(selected);
+      return url ? [{ attachment, url }] : [];
     });
     if (!remote.length) return;
-    // Older JSON transports resolve content without enforcing this message policy.
-    if (mail.data.disableUrlAccess) {
-      if (this.rendersContent) return Promise.reject(Object.assign(
-        new Error(`Url access rejected for ${remote[0].url}`), { code: 'EURLACCESS' }));
-      return;
-    }
+    if (mail.data.disableUrlAccess) return;
     if (this.options.allowRemoteAttachments) return;
     return this.substitute(mail, attachments, remote);
   }
 
   private async substitute<T>(mail: MailMessage<T>, attachments: Mail.Attachment[],
-    remote: { attachment: Mail.Attachment; url: string }[]): Promise<void> {
+    remote: { attachment: Mail.Attachment; url: URL }[]): Promise<void> {
     const replacements = this.prepared.get(mail)?.replacements ?? new Map<Mail.Attachment, Mail.Attachment>();
     for (const { attachment, url } of remote) {
       if (replacements.has(attachment)) continue;
@@ -47,8 +44,8 @@ export class MockAttachments {
         ? await this.options.resolveRemoteAttachment({ ...attachment }) : Buffer.alloc(0);
       const replacement: Mail.Attachment = {
         ...attachment,
-        filename: attachment.filename ?? url.split('/').pop()!.split('?').shift(),
-        contentType: attachment.contentType || detectMimeType(attachment.filename || url),
+        filename: attachment.filename ?? (url.pathname.split('/').pop() || undefined),
+        contentType: attachment.contentType || detectMimeType(attachment.filename || url.pathname),
         content: Buffer.from(content),
       };
       // URL and encoding fields would make Nodemailer resolve or decode the fixture again.
@@ -67,12 +64,22 @@ export class MockAttachments {
     if (prepared) mail.data = prepared.original;
   }
 
-  async forRendering<T>(mail: MailMessage<T>): Promise<MailMessage<T>> {
+  async forRendering<T>(mail: MailMessage<T>, json: boolean): Promise<MailMessage<T>> {
     const prepared = this.prepared.get(mail);
     const isolated = Object.assign(Object.create(Object.getPrototypeOf(mail)), mail) as MailMessage<T>;
     if (prepared) this.prepared.set(isolated, prepared);
     // Stream plugins may have changed JSON attachment data after MIME compilation.
     await this.prepare(isolated);
+    if (json && isolated.data.attachments) {
+      // JSONTransport resolves href first. Use the same path precedence as MIME.
+      const attachments = isolated.data.attachments.map((attachment) => {
+        if (!attachment.path || !attachment.href) return attachment;
+        const copy = { ...attachment };
+        delete copy.href;
+        return copy;
+      });
+      isolated.data = { ...isolated.data, attachments };
+    }
     return isolated;
   }
 }

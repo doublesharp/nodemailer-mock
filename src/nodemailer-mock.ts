@@ -13,9 +13,11 @@ import { messages, createFailResponse, MockInfo, MockResponseMode } from './lib/
 import { copyInfo, createInfo } from './lib/response';
 import { MockTestAccounts } from './lib/test-account';
 import { renderMessage, RenderOptions } from './lib/render';
-import { MockPool } from './lib/pool';
-import { MockOAuth2, MockOAuthOptions, MockOAuthProvision } from './lib/oauth2';
+import { MockPool, MockPoolOptions } from './lib/pool';
+import { isOAuth2, MockOAuth2, MockOAuthOptions, MockOAuthProvision } from './lib/oauth2';
 import { MockAttachments, RemoteAttachmentOptions } from './lib/attachments';
+import { AccessPolicy, assertContentAccess, assertMessageAccess, enforcedAccessPolicy,
+  mergeAccessPolicy } from './lib/access-policy';
 
 export type { MockSentMessageInfo, RealisticMockSentMessageInfo, MockInfo, MockResponseMode,
   MockSmtpError } from './lib/messages';
@@ -56,8 +58,12 @@ interface SendContext<Mode extends MockResponseMode> {
   outcome?: MockQueuedResult<Mode>;
 }
 
+interface ActiveSend<Mode extends MockResponseMode> extends SendContext<Mode> {
+  policy: AccessPolicy;
+}
+
 // A shared async scope avoids retaining one AsyncLocalStorage instance per transporter.
-const sendInvocation = new AsyncLocalStorage<SendContext<MockResponseMode>>();
+const sendInvocation = new AsyncLocalStorage<{ policy: AccessPolicy }>();
 
 export interface NodemailerMockTransporter<Mode extends MockResponseMode = 'legacy'>
   extends Transporter<MockInfo<Mode>> {
@@ -176,7 +182,7 @@ export class NodemailerMocked<Mode extends MockResponseMode = 'legacy'> implemen
     options?: Mail.Options
   ): NodemailerMockTransporter<Mode> => {
     // indicate that we are creating a transport
-    debug('createTransport', options);
+    debug('createTransport', { hasDefaults: Boolean(options) });
     const _transport = new NodemailerMockTransport(
       this,
       {
@@ -397,8 +403,9 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
   public readonly realmailer: Transporter<SentMessageInfo> | undefined;
   public readonly name = 'Nodemailer Mock Transport';
   public readonly version = '0.0.0';
-  private readonly options: Record<string, unknown>;
+  private readonly options: Record<string, unknown> & RenderOptions & MockPoolOptions;
   private readonly settings: MockOptions<Mode>;
+  private readonly rendersContent: boolean;
   public readonly attachments: MockAttachments;
   private readonly pool?: MockPool;
   private simulationGeneration = 0;
@@ -406,15 +413,47 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
 
   // handlers passed from the mock to the transport
   private handlers;
-  private readonly _sends = new WeakMap<MailMessage<MockInfo<Mode>>, SendContext<Mode>>();
+  private readonly _sends = new WeakMap<MailMessage<MockInfo<Mode>>, ActiveSend<Mode>>();
 
-  public withSendContext<T>(send: () => T): T {
-    return sendInvocation.run(this.handlers.beginSend(), send);
+  public withSendContext<T>(data: Mail.Options, send: (options: Mail.Options) => T, fail: (error: Error) => T): T {
+    const policy = this.accessPolicy(data);
+    const context: ActiveSend<Mode> = { ...this.handlers.beginSend(), policy };
+    return sendInvocation.run(context, () => {
+      try {
+        this.preflight({ ...this.defaults, ...data }, policy);
+      } catch (error) {
+        return fail(error as Error);
+      }
+      return send({ ...data, ...enforcedAccessPolicy(policy) });
+    });
   }
 
   public captureSend(email: MailMessage<MockInfo<Mode>>): void {
-    const context = sendInvocation.getStore() as SendContext<Mode> | undefined;
+    const context = sendInvocation.getStore() as ActiveSend<Mode> | undefined;
     if (context) this._sends.set(email, context);
+    this.reassertAccess(email);
+  }
+
+  private accessPolicy(data: Mail.Options): AccessPolicy {
+    return mergeAccessPolicy(this.options, this.defaults, data);
+  }
+
+  private reassertAccess(email: MailMessage<MockInfo<Mode>>): AccessPolicy {
+    const context = this._sends.get(email);
+    const policy = mergeAccessPolicy(this.accessPolicy(email.data), context?.policy);
+    if (context) context.policy = policy;
+    Object.assign(email.data, enforcedAccessPolicy(policy));
+    return policy;
+  }
+
+  private preflight(data: Mail.Options, policy: AccessPolicy): void {
+    if (this.rendersContent) assertMessageAccess(policy, data);
+    else if (this.options.attachDataUrls || data.attachDataUrls) assertContentAccess(policy, data.html);
+  }
+
+  public prepareAttachments(email: MailMessage<MockInfo<Mode>>): Promise<void> | undefined {
+    this.preflight(email.data, this.reassertAccess(email));
+    return this.attachments.prepare(email);
   }
 
   public _isIdle = false;
@@ -435,7 +474,7 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       isCurrent?: (generation: number) => boolean;
     },
     transport?: NodemailerMockTransportInput,
-    options?: Mail.Options,
+    private readonly defaults?: Mail.Options,
     settings: MockOptions<Mode> = {} as MockOptions<Mode>
   ) {
     this.nodemailermock = nodemailermock;
@@ -450,11 +489,14 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
     const mailer = nodemailermock.nodemailer ?? Nodemailer;
     /* istanbul ignore else  */
     if (typeof mailer.createTransport === 'function') {
-      this.realmailer = mailer.createTransport(transport ?? {}, options);
+      this.realmailer = mailer.createTransport(transport ?? {}, defaults);
     }
-    this.options = (this.realmailer?.options ?? (typeof transport === 'object' ? transport : {})) as Record<string, unknown>;
-    this.attachments = new MockAttachments(settings,
-      Boolean(this.options.streamTransport || this.options.jsonTransport || settings.validateContent));
+    const fallback = typeof transport === 'object' && transport !== null ? transport : {};
+    this.options = (this.realmailer?.options ?? fallback) as typeof this.options;
+    this.rendersContent = Boolean(
+      this.options.streamTransport || this.options.jsonTransport || settings.validateContent
+    );
+    this.attachments = new MockAttachments(settings, this.rendersContent);
     if (settings.simulateDelivery && this.options.pool) {
       this.pool = new MockPool(this.options, (event) => this.nodemailer?.emit(event));
     }
@@ -485,21 +527,27 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
     callback: (err: Error | null, info: MockInfo<Mode>) => void
   ): void {
     // indicate that sendMail() has been called
-    debug('transporter.send', email);
+    debug('transporter.send', { rendersContent: this.rendersContent, pooled: Boolean(this.pool) });
     const context = this._sends.get(email) ?? this.handlers.beginSend();
+    const accessPolicy = this.reassertAccess(email);
     this._sends.delete(email);
+    const compiledId = email.message?.messageId();
     let info = this.handlers.createInfo(email);
     let outcome = context.outcome;
     let attempted = false;
     let configured = false;
     const deliver = async () => {
       if (attempted && this.handlers.isCurrent(context.generation)) outcome = this.handlers.nextOutcome();
+      if (attempted && compiledId) email.message.setHeader('Message-ID', compiledId);
+      info = this.handlers.createInfo(email);
+      configured = false;
       attempted = true;
-      const auth = this.options.pool ? this.options.auth : email.data.auth ?? this.options.auth;
+      const auth = (this.options.pool ? this.options.auth : email.data.auth ?? this.options.auth) as
+        MockOAuthOptions | undefined;
       const provider = this.nodemailer?.get('oauth2_provision_cb') as MockOAuthProvision | undefined;
-      const oauth = this.settings.simulateDelivery && (auth as MockOAuthOptions)?.type?.toLowerCase() === 'oauth2';
+      const oauth = this.settings.simulateDelivery && isOAuth2(auth);
       if (oauth && this.handlers.isCurrent(context.generation)) {
-        await this.oauth.authorize(auth as MockOAuthOptions, provider);
+        await this.oauth.authorize(auth, provider);
       }
       const check = async () => {
         const current = outcome;
@@ -511,9 +559,9 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       try {
         await check();
       } catch (error) {
-        if (!oauth || (error as { code?: string }).code !== 'EAUTH' ||
+        if (!oauth || (error as { code?: string } | null | undefined)?.code !== 'EAUTH' ||
           !this.handlers.isCurrent(context.generation)) throw error;
-        await this.oauth.authorize(auth as MockOAuthOptions, provider, true);
+        await this.oauth.authorize(auth, provider, true);
         if (!this.handlers.isCurrent(context.generation)) throw error;
         outcome = this.handlers.nextOutcome();
         await check();
@@ -528,22 +576,26 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       const capabilities = this.settings.simulateDelivery ? { ehlo: [...this.settings.smtpCapabilities ?? []] } : {};
       configured = true;
       info = this.handlers.configureInfo({ ...info, ...capabilities }, outcome?.info, context.generation);
-      const rendersContent = this.options.streamTransport || this.options.jsonTransport ||
-        this.settings.validateContent;
-      if (email.message && rendersContent) {
+      const policy = mergeAccessPolicy(accessPolicy, email.data);
+      if (this.rendersContent) assertMessageAccess(policy, email.data);
+      const rendering = await this.attachments.forRendering(email,
+        Boolean(this.options.jsonTransport && !this.options.streamTransport));
+      let sent = email.data;
+      if (email.message && this.rendersContent) {
         email.message.setHeader('Message-ID', info.messageId);
         // JSON normalization reads mail.data rather than the MIME header.
-        email.data = { ...email.data, messageId: info.messageId };
+        rendering.data = { ...rendering.data, messageId: info.messageId };
+        sent = { ...sent, messageId: info.messageId };
       }
-      const rendered = await renderMessage(await this.attachments.forRendering(email), {
-        ...this.options as RenderOptions, validateContent: this.settings.validateContent,
+      const rendered = await renderMessage(rendering, {
+        ...this.options, ...policy, validateContent: this.settings.validateContent,
       });
       info = { ...rendered, ...info };
       if (this.settings.simulateDelivery && !info.accepted.length && info.rejected.length) {
         throw Object.assign(new Error('All recipients were rejected'), { code: 'EENVELOPE', command: 'RCPT TO',
           rejected: [...info.rejected], rejectedErrors: info.rejectedErrors && [...info.rejectedErrors] });
       }
-      this.handlers.addSentMail(email.data, context.generation);
+      this.handlers.addSentMail(sent, context.generation);
       return info;
     };
     const response = this.pool && this.handlers.isCurrent(context.generation) ? this.pool.run(deliver) : deliver();
@@ -555,13 +607,13 @@ export class NodemailerMockTransport<Mode extends MockResponseMode = 'legacy'> i
       }
       throw error;
     }).then((result) => {
-      debug('transporter.send', 'SUCCESS', result);
+      debug('transporter.send', 'SUCCESS', { rendered: result.message !== undefined });
       return callback && callback(null, result);
     }, (error: unknown) => {
       info.response = error instanceof Error
         ? error
         : new Error('Failure check threw a non-Error value', { cause: error });
-      debug('transporter.send', 'FAIL', info.response, info);
+      debug('transporter.send', 'FAIL');
       return callback && callback(info.response, info);
     });
   }
@@ -666,11 +718,8 @@ export class NodemailerMockMail<Mode extends MockResponseMode = 'legacy'>
 
     this.nodemailermock = nodemailermock;
     this.transporter = transport;
-    // This plugin runs before user plugins, including plugins whose callbacks resume outside the async context.
-    super.use('compile', (email, done) => {
-      transport.captureSend(email);
-      done();
-    });
+    // Nodemailer only runs its built-in compile plugins when the stage is registered.
+    super.use('compile', (_email, done) => done());
 
     this.mock = {
       /**
@@ -698,22 +747,31 @@ export class NodemailerMockMail<Mode extends MockResponseMode = 'legacy'>
     mailOptions: Mail.Options,
     callback?: (err: Error | null, info: MockInfo<Mode>) => void
   ): Promise<MockInfo<Mode>> | void {
-    return this.transporter.withSendContext(() => callback
-      ? super.sendMail(mailOptions, callback)
-      : super.sendMail(mailOptions));
+    return this.transporter.withSendContext(mailOptions, (data) => callback
+      ? super.sendMail(data, callback)
+      : super.sendMail(data), (error) => {
+      if (!callback) return Promise.reject(error);
+      process.nextTick(() => callback(error, undefined!));
+    });
   }
 
   // Nodemailer compiles MIME between the compile and stream plugin stages. Substitute
   // after user compile plugins, then restore data before stream plugins and recording.
   _processPlugins(step: string, mail: MailMessage<MockInfo<Mode>>,
     callback: Parameters<NodemailerMockPlugin>[1]): void {
+    if (step === 'compile') this.transporter.captureSend(mail);
     if (step === 'stream') this.transporter.attachments.restore(mail);
     const prototype = Mail.prototype as Mail<MockInfo<Mode>> & {
       _processPlugins: NodemailerMockMail<Mode>['_processPlugins'];
     };
     prototype._processPlugins.call(this, step, mail, (error) => {
       if (error || step !== 'compile') return callback(error);
-      const pending = this.transporter.attachments.prepare(mail);
+      let pending: Promise<void> | undefined;
+      try {
+        pending = this.transporter.prepareAttachments(mail);
+      } catch (failure) {
+        return callback(failure as Error);
+      }
       if (pending) pending.then(() => callback(), callback);
       else callback();
     });

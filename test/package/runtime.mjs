@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import defaultExport, { createTransport, getMockFor, mock, mocked } from 'nodemailer-mock';
 import nodemailer from 'nodemailer';
 import { messages } from 'nodemailer-mock/lib/messages';
@@ -150,6 +151,9 @@ for (const owner of [commonjs, defaultExport]) {
     const attachment = Object.freeze({ filename: 'report.pdf', path: 'https://example.invalid/report.pdf' });
     const offline = owner.getMockFor(nodemailer);
     await offline.createTransport(options).sendMail({ attachments: [attachment] });
+    for (const href of ['\u00a0http://127.0.0.1:1/nbsp.txt', '\ufeffhttp://127.0.0.1:1/bom.txt']) {
+      await offline.createTransport(options).sendMail({ attachments: [{ href }] });
+    }
     assert.equal(offline.mock.getSentMail()[0].attachments[0], attachment);
     await assert.rejects(offline.createTransport({ ...options, disableUrlAccess: true }).sendMail({
       attachments: [{ href: 'http://127.0.0.1:1/must-not-request' }],
@@ -164,3 +168,16 @@ for (const owner of [commonjs, defaultExport]) {
   }
 }
 console.log('Packaged runtime: offline remote attachments, fixtures and original options passed');
+
+const policyMock = getMockFor(nodemailer, { validateContent: true });
+const local = { path: fileURLToPath(import.meta.url) };
+const remote = { href: 'http:example.invalid/fixture' };
+const overrides = Object.freeze({ disableFileAccess: false, disableUrlAccess: false });
+for (const options of [{ jsonTransport: true }, { streamTransport: true, buffer: true }, {}]) {
+  const safe = policyMock.createTransport(options, { disableFileAccess: true, disableUrlAccess: true });
+  await assert.rejects(safe.sendMail({ ...overrides, raw: { ...local, content: '' } }), { code: 'EFILEACCESS' });
+  await assert.rejects(safe.sendMail({ ...overrides, attachments: [{ ...local, ...remote }] }), { code: 'EURLACCESS' });
+}
+const ordinary = getMockFor(nodemailer).createTransport({}, { attachDataUrls: true, disableUrlAccess: true });
+await assert.rejects(ordinary.sendMail({ ...overrides, html: remote }), { code: 'EURLACCESS' });
+console.log('Packaged runtime: access restrictions preserved across content modes');
