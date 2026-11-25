@@ -6,7 +6,7 @@ For release steps, see the [release guide](docs/RELEASING.md).
 
 Develop on Node.js 24 and test on Node.js 22, matching
 [CI](.github/workflows/ci.yml). Install the exact pnpm version in the
-`packageManager` field of [package.json](package.json), currently `pnpm@11.21.0`.
+`packageManager` field of [package.json](package.json).
 Applications need a Node.js version supported by their installed Nodemailer version.
 
 ```sh
@@ -106,9 +106,8 @@ To create an archive after building, run `node scripts/pack.mjs <destination-dir
 this supports both ordinary and symlinked `dist/` directories.
 
 CI also runs package consumers on Node.js 22 and 24 with Nodemailer 6.10.1,
-7.0.13, 8.0.11, 9.1.1, and 10.0.9. Other patch versions are not covered by this
-matrix. For compatibility or packaging changes, run the final-version package
-checks in the [release guide](docs/RELEASING.md).
+7.0.13, 8.0.11, 9.1.1, 10.0.9, and 10.6.1. For compatibility or packaging changes,
+run the final-version package checks in the [release guide](docs/RELEASING.md).
 
 Run `pnpm run formal` to check both the TLA+ models and Lean proofs. Run
 `pnpm run formal:tla` or `pnpm run formal:lean` to check either separately.

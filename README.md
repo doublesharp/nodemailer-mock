@@ -1,44 +1,75 @@
 # nodemailer-mock
 
-[![nodemailer-mock](https://img.shields.io/npm/v/nodemailer-mock.svg)](https://www.npmjs.com/package/nodemailer-mock)
-[![Code Coverage Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdoublesharp.github.io%2Fnodemailer-mock%2Fcoverage-badge.json)](https://doublesharp.github.io/nodemailer-mock/coverage/)
-![Downloads](https://img.shields.io/npm/dt/nodemailer-mock.svg)
+[![npm version](https://img.shields.io/npm/v/nodemailer-mock)](https://www.npmjs.com/package/nodemailer-mock)
+[![CI](https://github.com/doublesharp/nodemailer-mock/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/doublesharp/nodemailer-mock/actions/workflows/ci.yml?query=branch%3Amain)
+[![Codecov coverage](https://codecov.io/gh/doublesharp/nodemailer-mock/branch/main/graph/badge.svg)](https://app.codecov.io/github/doublesharp/nodemailer-mock)
+[![Monthly npm downloads](https://img.shields.io/npm/dm/nodemailer-mock)](https://www.npmjs.com/package/nodemailer-mock)
+[![MIT license](https://img.shields.io/npm/l/nodemailer-mock)](https://github.com/doublesharp/nodemailer-mock/blob/main/LICENSE)
 
 Mock [`nodemailer`](https://www.npmjs.com/package/nodemailer) in Node.js tests.
 Inspect sent messages and simulate failures without sending email.
 
-[Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
+[Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md) · [Doublcov report](https://doublesharp.github.io/nodemailer-mock/coverage/)
 
 Compatible with Nodemailer 6 through 10. Upstream ships security fixes on its
 current major, 10.x. Use its latest patched release and a Node.js version it
-supports. Nodemailer 10 bundles TypeScript declarations. For older versions,
-install a matching `@types/nodemailer` package in TypeScript projects. See the
-[Nodemailer security policy](https://github.com/nodemailer/nodemailer/security).
-
-The exported `MockSentMessageInfo` type describes the mock's result, including its
-legacy placeholder envelope and the `Error` returned in `info.response` for failed sends.
-Opt into `RealisticMockSentMessageInfo` with the factory configuration below.
-To annotate a mock transporter, use `NodemailerMockTransporter` or
-`Transporter<MockSentMessageInfo>` to preserve the mock's result type. Standard
-Nodemailer plugins and failure checks work with the mock.
+supports. See the [Nodemailer security policy](https://github.com/nodemailer/nodemailer/security).
 
 ## Install
 
-Nodemailer is a peer dependency. If your application already installs it, keep its
-existing dependency and add only `nodemailer-mock` as a development dependency. For
-a new test project, install both:
+If your application already depends on Nodemailer, add the mock as a development
+dependency.
 
-```
-npm install nodemailer nodemailer-mock --save-dev
+```sh
+npm install -D nodemailer-mock
 ```
 
+Nodemailer is a peer dependency. For a standalone test project, install both
+packages with your package manager.
+
+```sh
+npm install -D nodemailer nodemailer-mock
 ```
+
+```sh
 pnpm add -D nodemailer nodemailer-mock
 ```
 
-```
+```sh
 yarn add -D nodemailer nodemailer-mock
 ```
+
+Nodemailer 10 includes TypeScript declarations. For projects using Nodemailer 6
+or 7, install `@types/nodemailer` for that major. The package tests use
+`@types/nodemailer@8` for Nodemailer 8 and 9.
+
+## Quick start
+
+Save this as `mail.test.cjs` and run `node --test mail.test.cjs`.
+
+```javascript
+const assert = require('node:assert/strict');
+const { beforeEach, test } = require('node:test');
+const mailer = require('nodemailer-mock');
+
+beforeEach(() => mailer.mock.reset());
+
+test('records the recipient', async () => {
+  await mailer.createTransport().sendMail({
+    from: 'sender@example.test',
+    to: 'recipient@example.test',
+    subject: 'Welcome',
+  });
+
+  const sent = mailer.mock.getSentMail();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, 'recipient@example.test');
+});
+```
+
+When your application imports Nodemailer, use the setup for [Jest](#example-using-jest),
+[Mocha](#example-using-mocha), [Vitest](#example-using-vitest), or
+[`node:test`](#example-using-nodetest).
 
 ## Module loading
 
@@ -56,14 +87,13 @@ Nodemailer module to create underlying transports. The optional second argument
 configures results, message IDs, content handling, and delivery simulation. Replace
 `nodemailer` before loading application code that imports it. With Jest, use the
 real module from `jest.requireActual('nodemailer')` in the manual mock shown below.
+Save standalone examples that use `import` and top-level `await` as `.mjs` files.
 
 ## Mock API
 
-Use the mock with [`Jest`](https://www.npmjs.com/package/jest),
-[`Mocha`](https://www.npmjs.com/package/mocha),
-[`Vitest`](https://www.npmjs.com/package/vitest), or
-[`node:test`](https://nodejs.org/api/test.html). Test helpers are available under
-the mocked module's `.mock` property.
+Test helpers are available under the mocked module's `.mock` property. Nodemailer's
+built-in processing runs by default. To run registered user plugins, call
+`mock.setUnmockedUsePlugins(true)`.
 
 ### `createTransport(transportOptions?, defaults?)`
 
@@ -95,10 +125,14 @@ Real verification can connect to the configured mail server.
 
 ### Realistic results and queued outcomes
 
-Legacy results remain the default. Create a separate mock with
-`responseMode: 'realistic'` to derive its envelope and accepted recipients from
-the compiled message. The result uses the message's `messageId`, or the configured generator
-when one is supplied. These values describe the simulation, not actual delivery.
+The default `MockSentMessageInfo` uses a placeholder envelope string. On a failed
+send, a callback may receive mock result information with an `Error` in
+`info.response`. To annotate a default mock transporter, use
+`NodemailerMockTransporter` or `Transporter<MockSentMessageInfo>`.
+
+Create a separate mock with `responseMode: 'realistic'` to derive its envelope and
+accepted recipients from the compiled message. The result uses the message's
+`messageId` or the value from the configured generator.
 
 ```javascript
 import nodemailer from 'nodemailer';
@@ -118,9 +152,7 @@ console.log(info.envelope.to); // ['recipient@example.test']
 console.log(info.messageId); // '<test-message@example.test>'
 ```
 
-TypeScript infers `RealisticMockSentMessageInfo` for this configuration. The
-existing `MockSentMessageInfo` and default factory return types retain their
-legacy envelope string.
+TypeScript infers `RealisticMockSentMessageInfo` for this configuration.
 
 Use `setSentMessageInfo()` to configure result fields for successful sends. Use
 `queueResult()` to simulate individual failures or successes, including partial
@@ -155,7 +187,9 @@ fields and builds a URL using the configured account's `web` address. It returns
 message; no inbox or hosted preview is created.
 
 ```javascript
-const mailer = require('nodemailer-mock').getMockFor();
+import { getMockFor } from 'nodemailer-mock';
+
+const mailer = getMockFor();
 const account = await mailer.createTestAccount();
 mailer.mock.setTestAccount({ ...account, web: 'https://preview.example.test' });
 mailer.mock.setSentMessageInfo({ response: '250 OK [STATUS=sent MSGID=test-123]' });
@@ -166,7 +200,7 @@ console.log(mailer.getTestMessageUrl(info));
 
 ### Message output and content validation
 
-Transport options `streamTransport: true` and `jsonTransport: true` now produce
+Transport options `streamTransport: true` and `jsonTransport: true` produce
 `info.message` through Nodemailer's offline transports. Stream output is a
 Readable, or a Buffer with `buffer: true`. JSON output is a string, or a normalized
 object with `skipEncoding: true`. Use `responseMode: 'realistic'` for a typed
@@ -180,7 +214,9 @@ bytes. Timings and other SMTP metadata can be supplied through
 `envelopeTime`, and `messageTime`. The mock does not measure SMTP round trips.
 
 ```javascript
-const mailer = require('nodemailer-mock').getMockFor(undefined, {
+import { getMockFor } from 'nodemailer-mock';
+
+const mailer = getMockFor(undefined, {
   responseMode: 'realistic',
   validateContent: true,
 });
@@ -203,7 +239,9 @@ The resolver runs once per remote attachment per send when output or validation
 is requested; ordinary sends do not call it. A resolver error fails the send.
 
 ```javascript
-const mailer = require('nodemailer-mock').getMockFor(undefined, {
+import { getMockFor } from 'nodemailer-mock';
+
+const mailer = getMockFor(undefined, {
   resolveRemoteAttachment: (attachment) => Buffer.from(`Fixture for ${attachment.filename}`),
 });
 const transport = mailer.createTransport({ jsonTransport: true });
@@ -216,8 +254,7 @@ console.log(mailer.mock.getSentMail()[0].attachments[0].href);
 ```
 
 Set factory option `allowRemoteAttachments: true` to let Nodemailer fetch real
-attachment content during rendering. This restores the attachment fetching
-behavior of 2.3.0 and bypasses `resolveRemoteAttachment`.
+attachment content during rendering. This bypasses `resolveRemoteAttachment`.
 
 For ordinary mocked transports, `validateContent: true` builds and consumes the
 message before reporting success, then discards the output. This catches missing
@@ -268,7 +305,9 @@ No SMTP server, provider API, or OAuth endpoint is contacted by the simulation.
   rejected recipient fail with `EENVELOPE`. Partial acceptance still succeeds.
 
 ```javascript
-const mailer = require('nodemailer-mock').getMockFor(undefined, {
+import { getMockFor } from 'nodemailer-mock';
+
+const mailer = getMockFor(undefined, {
   responseMode: 'realistic', simulateDelivery: true, smtpCapabilities: ['DSN'],
 });
 const transport = mailer.createTransport({ pool: true, maxConnections: 2 });
@@ -389,7 +428,6 @@ const email = {
 ### Callbacks
 
 ```javascript
-// send with nodestyle callback
 transport.sendMail(email, function(err, info) {
   if (err) {
     return console.log('Error!', err, info);
@@ -397,7 +435,6 @@ transport.sendMail(email, function(err, info) {
   return console.log('Success!', info);
 });
 
-// verify with nodestyle callback
 transport.verify(function(err, success) {
   if (err) {
     return console.log('Error!', err);
@@ -466,8 +503,8 @@ repository and excluded from the npm package. From a repository checkout, run
 Individual commands are `pnpm run example:jest`, `pnpm run example:mocha`,
 `pnpm run example:node-test`, and `pnpm run example:vitest`.
 
-The Jest, Mocha, and `node:test` snippets below use this CommonJS application module
-at the project root. The Vitest example mocks ESM imports directly.
+The Jest, Mocha, and `node:test` examples use this CommonJS application module
+at the project root. The Vitest example uses an ESM module.
 
 ```javascript
 // ./my-module.js
@@ -486,8 +523,8 @@ exports.sendEmail = async () => {
 
 ### Example using Jest
 
-For a CommonJS Jest project, create `./__mocks__/nodemailer.js` beside
-`node_modules`, within Jest's configured roots:
+In a CommonJS [Jest](https://www.npmjs.com/package/jest) project, place
+`./__mocks__/nodemailer.js` beside `node_modules`, within Jest's configured roots.
 
 ```javascript
 // ./__mocks__/nodemailer.js
@@ -536,9 +573,10 @@ test('Sends an email using mocked Nodemailer and TypeScript', async () => {
 
 ### Example using Mocha
 
-This CommonJS example temporarily intercepts `require('nodemailer')`. Install the
-hook before loading the application, clear its cached module, and restore the
-loader after the suite. This hook does not intercept native ESM imports.
+This CommonJS [Mocha](https://www.npmjs.com/package/mocha) example temporarily
+intercepts `require('nodemailer')`. Install the hook before loading the application,
+clear its cached module, and restore the loader after the suite. The hook applies
+to CommonJS loads.
 
 ```javascript
 // ./test/my-test.js
@@ -586,39 +624,40 @@ describe('Tests that send email', () => {
 
 ### Example using Vitest
 
-Use Vitest's `vi.mock()` to replace `nodemailer` with `nodemailer-mock`:
+Create an ESM application module that imports Nodemailer.
 
 ```javascript
-/**
- * Vitest Test
- * ./test/my-test.test.mjs
- **/
-import { describe, it, beforeEach, expect, vi } from "vitest";
-import nodemailermock from "nodemailer-mock";
+// ./mailer-test.mjs
+import nodemailer from 'nodemailer';
 
-// Mock nodemailer with nodemailer-mock
-vi.mock("nodemailer", () => {
-  return import("nodemailer-mock");
-});
-
-describe("Tests that send email", () => {
-  beforeEach(() => {
-    nodemailermock.mock.reset();
+export function sendEmail() {
+  return nodemailer.createTransport().sendMail({
+    from: 'sender@example.test',
+    to: 'recipient@example.test',
+    subject: 'Welcome',
   });
+}
+```
 
-  it("should send an email using nodemailer-mock", async () => {
-    // import the module under test after mocking
-    const nodemailer = await import("nodemailer");
-    const transport = nodemailer.createTransport({});
-    await transport.sendMail({ to: "justin@to.com", from: "justin@from.com" });
+In the [Vitest](https://www.npmjs.com/package/vitest) test, register the mock
+with `vi.mock()` before loading the application module.
 
-    // check the mock for our sent emails
-    const sentEmails = nodemailermock.mock.getSentMail();
-    // there should be one
-    expect(sentEmails.length).toBe(1);
-    // and it should match the to address
-    expect(sentEmails[0].to).toBe("justin@to.com");
-  });
+```javascript
+// ./test/vitest-example-javascript.test.mjs
+import { beforeEach, expect, test, vi } from 'vitest';
+import { mock } from 'nodemailer-mock';
+
+vi.mock('nodemailer', () => import('nodemailer-mock'));
+const { sendEmail } = await import('../mailer-test.mjs');
+
+beforeEach(() => mock.reset());
+
+test('records an email sent by the application', async () => {
+  await sendEmail();
+
+  const sent = mock.getSentMail();
+  expect(sent).toHaveLength(1);
+  expect(sent[0].to).toBe('recipient@example.test');
 });
 ```
 

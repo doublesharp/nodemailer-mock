@@ -33,11 +33,11 @@ jobs:
     name: test/node ${{ matrix.node }}/${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v6
-    - uses: pnpm/action-setup@v5
+    - uses: actions/checkout@v7.0.1
+    - uses: pnpm/action-setup@v6.1.1
       with:
         run_install: false
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7.1.0
       with:
         node-version: ${{ matrix.node }}
         cache: pnpm
@@ -50,40 +50,69 @@ jobs:
       fail-fast: false
       matrix:
         node: [ '22', '24' ]
-        nodemailer: [ '6.10.1', '7.0.13', '8.0.11', '9.1.1', '10.0.9' ]
+        nodemailer: [ '6.10.1', '7.0.13', '8.0.11', '9.1.1', '10.0.9', '10.6.1' ]
     name: package/node ${{ matrix.node }}/nodemailer ${{ matrix.nodemailer }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: pnpm/action-setup@v5
+    - uses: actions/checkout@v7.0.1
+    - uses: pnpm/action-setup@v6.1.1
       with:
         run_install: false
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7.1.0
       with:
         node-version: ${{ matrix.node }}
         cache: pnpm
     - run: pnpm install --frozen-lockfile
     - run: pnpm run test:package ${{ matrix.nodemailer }}
+  lcov:
+    name: Generate LCOV
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7.0.1
+    - uses: pnpm/action-setup@v6.1.1
+      with:
+        run_install: false
+    - uses: actions/setup-node@v7.1.0
+      with:
+        node-version: '22'
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+    - run: pnpm run nyc
+    - name: Upload LCOV artifact
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: lcov
+        path: coverage/lcov.info
+        if-no-files-found: error
+        overwrite: true
   coverage:
-    needs: [ test, package ]
+    needs: [ test, package, lcov ]
     name: coverage
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write # Codecov upload authenticates with GitHub OIDC
     steps:
-    - uses: actions/checkout@v6
-    - uses: pnpm/action-setup@v5
+    - uses: actions/checkout@v7.0.1
+    - name: Download LCOV artifact
+      uses: actions/download-artifact@v8.0.2
       with:
-        run_install: false
-    - uses: actions/setup-node@v6
-      with:
-        node-version: '22'
-        cache: pnpm
-    - run: pnpm install --frozen-lockfile
-    - run: pnpm run nyc
-    - uses: codecov/codecov-action@v6
+        name: lcov
+        path: coverage
+    - name: Upload LCOV to Codecov
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         use_oidc: true
         files: ./coverage/lcov.info
+        disable_search: true
         fail_ci_if_error: true
+  report:
+    needs: lcov
+    uses: ./.github/workflows/coverage.yml
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write

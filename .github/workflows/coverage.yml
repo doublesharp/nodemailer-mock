@@ -1,20 +1,10 @@
 name: Coverage
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_call:
 
 permissions:
-  actions: read
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   doublcov:
@@ -22,24 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: "22"
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Restore Doublcov history
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6.1.0
         with:
           path: .doublcov/history.json
           key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -47,22 +37,25 @@ jobs:
             doublcov-history-${{ github.ref_name }}-
             doublcov-history-
 
-      - name: Generate LCOV
-        run: pnpm run nyc
+      - name: Download LCOV artifact
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: lcov
+          path: coverage
 
       - name: Generate Doublcov report
         run: pnpm exec doublcov build --mode static --no-open
 
       - name: Save Doublcov history
         if: always() && hashFiles('.doublcov/history.json') != ''
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6.1.0
         with:
           path: .doublcov/history.json
           key: doublcov-history-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Upload Doublcov report
         if: always() && hashFiles('coverage/report/index.html') != ''
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: doublcov-report
           path: coverage/report
@@ -70,7 +63,7 @@ jobs:
 
       - name: Upload coverage data
         if: always() && hashFiles('coverage/lcov.info') != ''
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: doublcov-data
           path: |
@@ -122,7 +115,7 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && hashFiles('pages/coverage/index.html') != ''
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: pages
 
@@ -146,16 +139,24 @@ jobs:
     needs: doublcov
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}coverage/
     steps:
       - name: Configure Pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@v6.0.0
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v5.0.1
 
       - name: Write Pages summary
         run: |

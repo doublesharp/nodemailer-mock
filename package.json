@@ -21,7 +21,7 @@
   ],
   "author": "Justin Silver",
   "license": "MIT",
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@12.23.0",
   "bugs": {
     "url": "https://github.com/doublesharp/nodemailer-mock/issues"
   },
@@ -75,7 +75,7 @@
     "nodemailer": "^6.x || ^7.x || ^8.x || ^9.x || ^10.x"
   },
   "devDependencies": {
-    "@0xdoublesharp/doublcov": "0.4.5",
+    "@0xdoublesharp/doublcov": "0.4.6",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@jest/globals": "^30.5.2",
     "@types/chai": "^5.2.3",
@@ -84,19 +84,19 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.5",
     "@types/nodemailer": "^8.0.2",
-    "@typescript-eslint/eslint-plugin": "^8.72.1",
-    "@typescript-eslint/parser": "^8.72.1",
+    "@typescript-eslint/eslint-plugin": "^8.74.0",
+    "@typescript-eslint/parser": "^8.74.0",
     "chai": "^6.3.0",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "jest": "^30.5.2",
-    "knip": "^6.44.1",
+    "knip": "^6.48.0",
     "mocha": "^12.0.3",
     "nodemailer": "~10.6.1",
     "nyc": "^18.0.0",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "overrides": {
     "@babel/core": "^7.29.7",

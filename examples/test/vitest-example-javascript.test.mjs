@@ -1,29 +1,15 @@
-import { describe, it, beforeEach, expect, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
+import { mock } from 'nodemailer-mock';
 
-// Mock nodemailer with nodemailer-mock before any imports that use it
-vi.mock('nodemailer', async () => {
-  return await import('../../dist/nodemailer-mock.js');
-});
+vi.mock('nodemailer', () => import('nodemailer-mock'));
+const { sendEmail } = await import('../mailer-test.mjs');
 
-// Import the mock to access mock utilities
-const nodemailermock = await import('../../dist/nodemailer-mock.js');
+beforeEach(() => mock.reset());
 
-describe('Vitest JavaScript', () => {
-  beforeEach(() => {
-    nodemailermock.mock.reset();
-  });
+test('records an email sent by the application', async () => {
+  await sendEmail();
 
-  it('Send an email using the mocked nodemailer + vitest', async () => {
-    // Use the mocked nodemailer directly (as a consumer would in their app)
-    const nodemailer = await import('nodemailer');
-    const transport = nodemailer.createTransport({});
-    await transport.sendMail({ to: 'justin@to.com', from: 'justin@from.com' });
-
-    // check the mock for our sent emails
-    const sentEmails = nodemailermock.mock.getSentMail();
-    // there should be one
-    expect(sentEmails.length).toBe(1);
-    // and it should match the to address
-    expect(sentEmails[0].to).toBe('justin@to.com');
-  });
+  const sent = mock.getSentMail();
+  expect(sent).toHaveLength(1);
+  expect(sent[0].to).toBe('recipient@example.test');
 });

@@ -102,11 +102,16 @@ git diff --check
   branch, function, and line coverage thresholds.
 
 CI checks the locked development dependencies and packaged consumers on Node.js
-22 and 24 with Nodemailer 6.10.1, 7.0.13, 8.0.11, 9.1.1, and 10.0.9. Run
+22 and 24 with Nodemailer 6.10.1, 7.0.13, 8.0.11, 9.1.1, 10.0.9, and 10.6.1. Run
 `pnpm run test:package` with the final locked development version too. To check a
 specific baseline locally, pass its exact version, such as
 `pnpm run test:package 6.10.1`. This tests runtime behavior and CommonJS/ESM
 TypeScript imports by package name without changing the release lockfile.
+
+CI generates `coverage/lcov.info` once per run. The coverage job uploads it to
+Codecov using GitHub OIDC, and the reusable coverage workflow builds the Doublcov
+report from the same artifact. The README badge tracks `main`. Pull requests get
+a downloadable Doublcov report, and non-PR runs publish it to GitHub Pages.
 
 ## 5. Inspect and smoke-test the package
 

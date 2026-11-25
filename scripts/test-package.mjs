@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { packPackage } from './pack.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const declarationVersions = { 6: '6.4.17', 7: '7.0.11', 8: '8.0.1', 9: '8.0.1', 10: null };
+const declarationVersions = { 6: '6.4.24', 7: '7.0.12', 8: '8.0.2', 9: '8.0.2', 10: null };
 const require = createRequire(import.meta.url);
 const version = process.argv[2] ?? require('nodemailer/package.json').version;
 const major = Number(version.split('.')[0]);
@@ -36,7 +36,7 @@ try {
     'nodemailer-mock': `file:${join(temporary, archive)}`,
     nodemailer: version,
     typescript: '6.0.3',
-    '@types/node': '22.20.2',
+    '@types/node': '22.20.5',
     '@types/debug': '4.1.13',
   };
   if (declarationVersion) dependencies['@types/nodemailer'] = declarationVersion;
