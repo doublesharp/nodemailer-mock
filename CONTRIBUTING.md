@@ -10,7 +10,7 @@ Develop on Node.js 24 and test on Node.js 22, matching
 Applications need a Node.js version supported by their installed Nodemailer version.
 
 ```sh
-git clone https://github.com/doublesharp/nodemailer-mock.git
+git clone https://github.com/0xdoublesharp/nodemailer-mock.git
 cd nodemailer-mock
 git switch -c feature/describe-your-change
 pnpm --version

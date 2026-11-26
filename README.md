@@ -1,15 +1,15 @@
 # nodemailer-mock
 
 [![npm version](https://img.shields.io/npm/v/nodemailer-mock)](https://www.npmjs.com/package/nodemailer-mock)
-[![CI](https://github.com/doublesharp/nodemailer-mock/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/doublesharp/nodemailer-mock/actions/workflows/ci.yml?query=branch%3Amain)
-[![Codecov coverage](https://codecov.io/gh/doublesharp/nodemailer-mock/branch/main/graph/badge.svg)](https://app.codecov.io/github/doublesharp/nodemailer-mock)
+[![CI](https://github.com/0xdoublesharp/nodemailer-mock/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/0xdoublesharp/nodemailer-mock/actions/workflows/ci.yml?query=branch%3Amain)
+[![Codecov coverage](https://codecov.io/gh/0xdoublesharp/nodemailer-mock/branch/main/graph/badge.svg)](https://app.codecov.io/github/0xdoublesharp/nodemailer-mock)
 [![Monthly npm downloads](https://img.shields.io/npm/dm/nodemailer-mock)](https://www.npmjs.com/package/nodemailer-mock)
-[![MIT license](https://img.shields.io/npm/l/nodemailer-mock)](https://github.com/doublesharp/nodemailer-mock/blob/main/LICENSE)
+[![MIT license](https://img.shields.io/npm/l/nodemailer-mock)](https://github.com/0xdoublesharp/nodemailer-mock/blob/main/LICENSE)
 
 Mock [`nodemailer`](https://www.npmjs.com/package/nodemailer) in Node.js tests.
 Inspect sent messages and simulate failures without sending email.
 
-[Changelog](CHANGELOG.md) · [Contributing](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md) · [Doublcov report](https://doublesharp.github.io/nodemailer-mock/coverage/)
+[Changelog](CHANGELOG.md) · [Contributing](https://github.com/0xdoublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md) · [Doublcov report](https://0xdoublesharp.github.io/nodemailer-mock/coverage/)
 
 Compatible with Nodemailer 6 through 10. Upstream ships security fixes on its
 current major, 10.x. Use its latest patched release and a Node.js version it
@@ -491,12 +491,12 @@ try {
 
 From a source checkout, run `pnpm run formal` for both TLA+ model checks and
 Lean proofs. Run `pnpm run formal:tla` or `pnpm run formal:lean` to check
-either separately. The [contributor guide](https://github.com/doublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
+either separately. The [contributor guide](https://github.com/0xdoublesharp/nodemailer-mock/blob/main/CONTRIBUTING.md)
 lists the other validation commands.
 
 ## Example tests
 
-The [examples directory](https://github.com/doublesharp/nodemailer-mock/tree/main/examples)
+The [examples directory](https://github.com/0xdoublesharp/nodemailer-mock/tree/main/examples)
 contains runnable Jest, Mocha, Vitest, and `node:test` tests. It is available in the
 repository and excluded from the npm package. From a repository checkout, run
 `pnpm install --frozen-lockfile`, then `pnpm run examples` to run all four runners.
@@ -666,7 +666,7 @@ test('records an email sent by the application', async () => {
 Node.js's built-in test runner, [`node:test`](https://nodejs.org/api/test.html),
 supports module mocking with the `--experimental-test-module-mocks` flag. The
 example selects mock options based on the Node.js version. See the
-[CI matrix](https://github.com/doublesharp/nodemailer-mock/blob/main/.github/workflows/ci.yml)
+[CI matrix](https://github.com/0xdoublesharp/nodemailer-mock/blob/main/.github/workflows/ci.yml)
 for the versions tested by this project, and choose a version supported by your
 installed Nodemailer release.
 

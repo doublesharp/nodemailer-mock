@@ -4,7 +4,7 @@
   "description": "Easy as pie nodemailer mock for unit testing your Node.js applications.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/doublesharp/nodemailer-mock.git"
+    "url": "git+https://github.com/0xdoublesharp/nodemailer-mock.git"
   },
   "keywords": [
     "nodemailer",
@@ -23,9 +23,9 @@
   "license": "MIT",
   "packageManager": "pnpm@12.23.0",
   "bugs": {
-    "url": "https://github.com/doublesharp/nodemailer-mock/issues"
+    "url": "https://github.com/0xdoublesharp/nodemailer-mock/issues"
   },
-  "homepage": "https://github.com/doublesharp/nodemailer-mock#readme",
+  "homepage": "https://github.com/0xdoublesharp/nodemailer-mock#readme",
   "main": "./dist/nodemailer-mock.js",
   "module": "./dist/nodemailer-mock.mjs",
   "types": "./dist/nodemailer-mock.d.ts",

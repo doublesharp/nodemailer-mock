@@ -194,9 +194,10 @@ NODE
 
 ## 7. Publish the stable release
 
-A maintainer with publishing access must verify npm's trusted-publisher
-configuration for this repository and `publish.yml` before tagging. The workflow
-requests OIDC permission, but npm must also be configured to trust it.
+Before tagging, verify that npm's trusted publisher for `nodemailer-mock`
+uses the GitHub organization `0xdoublesharp`, repository `nodemailer-mock`,
+and workflow `publish.yml`, with direct publishing enabled. Configure a new
+connection close to the release because it expires if unused for two days.
 
 From a clean checkout of the reviewed release commit on `main`:
 
